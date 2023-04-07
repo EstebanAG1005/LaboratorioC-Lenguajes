@@ -1,4 +1,5 @@
 digraph {
+	graph [rankdir=LR]
 	"" [shape=none style=invisible]
 	"" -> 0 [label=start]
 	1 [label=1]
@@ -37,10 +38,10 @@ digraph {
 	10 -> 11 [label=b]
 	9 -> 12 [label="ε"]
 	11 -> 12 [label="ε"]
-	13 -> 14 [label=2]
+	13 -> 14 [label=1]
 	12 -> 15 [label="ε"]
 	14 -> 15 [label="ε"]
-	16 -> 17 [label=1]
+	16 -> 17 [label=2]
 	15 -> 18 [label="ε"]
 	17 -> 18 [label="ε"]
 	18 -> 5 [label="ε"]

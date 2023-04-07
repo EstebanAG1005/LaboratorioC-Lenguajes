@@ -166,7 +166,7 @@ def to_graphviz_vertical(nfa):
 
 
 def to_graphviz_horizontal(nfa):
-    dot = Digraph(graph_attr={"rotate": "90"})  # Set direction to left-to-right
+    dot = Digraph(graph_attr={"rankdir": "LR"})  # Set direction to left-to-right
     dot.node(
         "", style="invisible", shape="none"
     )  # Add an empty invisible node at the start
@@ -380,8 +380,8 @@ def evaluatePostfix(regex):
         f.write("\n")
         for transition in afn.transiciones:
             f.write(str(transition) + ", ")
-    to_graphviz_vertical(afn).render("nfa.gv", view=True)
-    # to_graphviz_horizontal(afn).render("nfa1.gv", view=True)
+    # to_graphviz_vertical(afn).render("nfa.gv", view=True)
+    to_graphviz_horizontal(afn).render("nfa1.gv", view=True)
     return afn
 
 
@@ -395,15 +395,9 @@ def ejecutar(regex):
 
 
 # INGRESANDO EXPRESION REGULAR A TRABAJAR
-# result = ejecutar("(a+b)*")
-# result = ejecutar(")a")
-# result = ejecutar("++a")
-# result = ejecutar("+a")
-# result = ejecutar("a b")
-# result = ejecutar("1++1")
-
-# result = ejecutar("ab*ab*")
-
-# result = ejecutar("0?(1?)?0*")
-
-result = ejecutar("(a|ϵ)*")
+digito = "2|1"
+numero = f"{digito}({digito})"
+letra = "a|b"
+identificador = f"{letra}({letra}|{digito})*"
+regex = identificador
+result = ejecutar(regex)
