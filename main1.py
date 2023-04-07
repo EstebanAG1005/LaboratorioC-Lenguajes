@@ -50,7 +50,7 @@ def reescribiendoExpr(regex):
             if (
                 ((regex[i].isalpha() or regex[i].isdigit()) and regex[i - 1] != "(")
                 or regex[i] == "("
-            ) and (regex[i - 1] != "|" or regex[i - 1] == ")"):
+            ) and (regex[i - 1] != "|" and regex[i - 1] != ")"):
                 newExpr += "." + regex[i]
             else:
                 newExpr += regex[i]
@@ -381,23 +381,97 @@ def evaluatePostfix(regex):
         for transition in afn.transiciones:
             f.write(str(transition) + ", ")
     # to_graphviz_vertical(afn).render("nfa.gv", view=True)
-    to_graphviz_horizontal(afn).render("nfa1.gv", view=True)
     return afn
 
 
+graph_counter = 0
+
 # Ejecutar Todo
 def ejecutar(regex):
+    global graph_counter
     print("\nExpresion regular ingresada: " + regex)
     regexprocess = reescribiendoExpr(regex)
     postfix = topostfix(regexprocess)
     print("Postfix: " + postfix)
-    return evaluatePostfix(postfix)
+    afn = evaluatePostfix(postfix)
+    to_graphviz_horizontal(afn).render("nfa{}.gv".format(graph_counter), view=True)
+    graph_counter += 1
+    return afn
 
 
-# INGRESANDO EXPRESION REGULAR A TRABAJAR
-digito = "2|1"
-numero = f"{digito}({digito})"
-letra = "a|b"
-identificador = f"{letra}({letra}|{digito})*"
-regex = identificador
-result = ejecutar(regex)
+def read_yalex_file(file_path):
+    with open(file_path, "r") as file:
+        content = file.read()
+
+    rules = []
+    for line in content.split("\n"):
+        if line.startswith("let"):
+            _, expr_name, regex = line.split(" ", 2)
+            rules.append((expr_name, regex))
+    return rules
+
+
+def convert_yalex_regex(yalex_regex):
+    converted_regex = yalex_regex.replace("=", "").replace('"', "")
+    return converted_regex.strip()
+
+
+def convertir_lex(archivo):
+    # Abrir el archivo y leer todas las líneas
+    with open(archivo, "r") as f:
+        lineas = f.readlines()
+
+    # Diccionario para almacenar las definiciones
+    definiciones = {}
+
+    # Leer cada línea y almacenar las definiciones
+    for linea in lineas:
+        if linea.startswith("let"):
+            nombre, valor = linea.split("=")
+            definiciones[nombre.strip()] = valor.strip()
+
+    # Reemplazar las definiciones en cada valor
+    for nombre, valor in definiciones.items():
+        for def_nombre, def_valor in definiciones.items():
+            expresion_regular = r"\b{}\b".format(def_nombre)
+            valor = re.sub(expresion_regular, "(" + def_valor + ")", valor)
+        definiciones[nombre] = valor
+
+    # Escribir las definiciones actualizadas en un nuevo archivo
+    with open(archivo + "_actualizado", "w") as f:
+        for nombre, valor in definiciones.items():
+            definicion_actualizada = nombre + " = " + definiciones[nombre] + "\n"
+            f.write(definicion_actualizada)
+
+    # Imprimir las definiciones actualizadas en la consola
+    for nombre, valor in definiciones.items():
+        definicion_actualizada = nombre + " = " + definiciones[nombre]
+        print(definicion_actualizada)
+
+
+# Leemos el archivo .yal y extraemos las reglas
+convertir_lex = convertir_lex("yalex1.lex")
+rules = read_yalex_file("yalex3.lex")
+print(rules)
+mega_automaton = None
+for expr_name, yalex_regex in rules:
+    print(f"Procesando expresión: {expr_name} -> {yalex_regex}")
+
+    # Convertimos la expresión regular de YALex a una expresión regular compatible
+    regex = convert_yalex_regex(yalex_regex)
+
+    print(f"Expresión regular convertida: {regex}")
+
+    # Creamos un AFN para la expresión regular
+    afn = ejecutar(regex)
+
+    # Unimos los AFN para crear el "mega autómata"
+    if mega_automaton is None:
+        mega_automaton = afn
+    else:
+        mega_automaton = concat(mega_automaton, afn)
+
+# Mostramos el "mega autómata"
+print("\nMega Autómata:")
+mega_automaton.display()
+to_graphviz_horizontal(mega_automaton).render("mega_automaton.gv", view=True)

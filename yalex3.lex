@@ -1,0 +1,4 @@
+let digito = "2|1"
+let numero = "(2|1)((2|1))*"
+let letra = "a|b"
+let identificador = "(a|b)((a|b)|(2|1))*"
