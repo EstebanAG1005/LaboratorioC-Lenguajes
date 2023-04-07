@@ -1,0 +1,23 @@
+digraph Automaton {
+	Identificador
+	Identificador -> Identificador_b [label=b]
+	Identificador -> Identificador_a [label=a]
+	Identificador -> "Identificador_-" [label="-"]
+	Identificador -> Identificador_z [label=z]
+	Identificador -> Identificador_A [label=A]
+	Identificador -> Identificador_Z [label=Z]
+	Identificador -> Identificador_w [label=w]
+	Identificador -> "Identificador_*" [label="*"]
+	"Operador de suma"
+	"Operador de suma" -> "Operador de suma_+" [label="+"]
+	"Operador de resta"
+	"Operador de resta" -> "Operador de resta_-" [label="-"]
+	"Operador de multiplicación"
+	"Operador de multiplicación" -> "Operador de multiplicación_*" [label="*"]
+	"Operador de asignación"
+	"Operador de asignación" -> "Operador de asignación_=" [label="="]
+	"Número"
+	"Número" -> "Número_b" [label=b]
+	"Número" -> "Número_d" [label=d]
+	"Número" -> "Número_+" [label="+"]
+}
