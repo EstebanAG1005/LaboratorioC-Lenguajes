@@ -43,8 +43,8 @@ def reescribiendoExpr(regex):
                 "La expresión regular no puede contener espacios."
             )
         regex = regex.replace("ϵ", " ")
-        # replace non-valid characters with spaces
-        regex = re.sub(r"[^a-zA-Z0-9\(\)\|\+\*\?]", " ", regex)
+        # ignore non-valid characters
+        regex = re.sub(r"[^a-zA-Z0-9()|+*?]", "", regex)
         # add dot for concatenation
         newExpr = regex[0]
         for i in range(1, len(regex)):
@@ -60,6 +60,7 @@ def reescribiendoExpr(regex):
         re.compile(newExpr)
         return newExpr
     except re.error as e:
+        # ... (rest of the code)
         error_msg = str(e)
         if "nothing to repeat" in error_msg:
             raise InvalidRegexException(
@@ -276,32 +277,35 @@ def union(nfa1, nfa2):
 
 def kleene(afn):
     nfaMain = AFN()
+    # Make a deep copy of the original NFA
+    nfaCopy = deepcopy(afn)
+    # Increment all states by 1 to avoid conflicts with nfaMain
+    nfaCopy.estados = set([s + 1 for s in nfaCopy.estados])
+    nfaCopy.estadoInicial += 1
+    nfaCopy.estadoFinal += 1
+    for transicion in nfaCopy.transiciones:
+        transicion["desde"] += 1
+        transicion["hacia"] = [s + 1 for s in transicion["hacia"]]
+    # Set up the new NFA
     nfaMain.estadoInicial = 0
-    afn.estados = np.add(np.array(list(afn.estados)), 1)
-    for i in range(0, len(afn.transiciones)):
-        afn.transiciones[i]["desde"] += 1
-        afn.transiciones[i]["hacia"] = list(np.add(1, afn.transiciones[i]["hacia"]))
-    afn.estadoInicial += 1
-    afn.estadoFinal += 1
-    nfaMain.estadoFinal = afn.estadoFinal + 1
+    nfaMain.estadoFinal = nfaCopy.estadoFinal + 1
+    nfaMain.estados = set(
+        [nfaMain.estadoInicial, nfaMain.estadoFinal] + list(nfaCopy.estados)
+    )
     initialTransition = {
         "desde": nfaMain.estadoInicial,
         "=>": " ",
-        "hacia": [afn.estadoInicial, nfaMain.estadoFinal],
+        "hacia": [nfaCopy.estadoInicial, nfaMain.estadoFinal],
     }
-    finalTransition = {
-        "desde": afn.estadoFinal,
+    finalTransition1 = {
+        "desde": nfaCopy.estadoFinal,
         "=>": " ",
-        "hacia": [afn.estadoInicial, nfaMain.estadoFinal],
+        "hacia": [nfaCopy.estadoInicial, nfaMain.estadoFinal],
     }
-    nfaMain.estados.add(nfaMain.estadoInicial)
-    nfaMain.estados.add(nfaMain.estadoFinal)
-    for state in afn.estados:
-        nfaMain.estados.add(state)
     nfaMain.transiciones.append(initialTransition)
-    for transition in afn.transiciones:
+    for transition in nfaCopy.transiciones:
         nfaMain.transiciones.append(transition)
-    nfaMain.transiciones.append(finalTransition)
+    nfaMain.transiciones.append(finalTransition1)
     return nfaMain
 
 
@@ -325,7 +329,6 @@ def conditional(afn):
     return result
 
 
-# convertir postfix a AFN
 def evaluatePostfix(regex):
     if len(regex) == 1:
         afn = AFN()
@@ -341,24 +344,38 @@ def evaluatePostfix(regex):
             if token == "*":
                 afn = stack.pop()
                 result = kleene(afn)
+                print("*")
+                result.display()
+                # If the kleene result is the only element in the stack,
+                # return it directly to avoid adding extra nodes
+                if stack.empty():
+                    return result
                 stack.push(result)
             elif token == ".":
                 nfa2 = stack.pop()
                 nfa1 = stack.pop()
                 result = concat(nfa1, nfa2)
+                print(".")
+                result.display()
                 stack.push(result)
             elif token == "|":
                 nfa2 = stack.pop()
                 nfa1 = stack.pop()
                 result = union(nfa1, nfa2)
+                print("|")
+                result.display()
                 stack.push(result)
             elif token == "?":
                 afn = stack.pop()
                 result = conditional(afn)
+                print("?")
+                result.display()
                 stack.push(result)
             elif token == "+":
                 afn = stack.pop()
                 result = plus(afn)
+                print("+")
+                result.display()
                 stack.push(result)
     afn = AFN()
     afn = stack.pop()
@@ -373,6 +390,7 @@ def evaluatePostfix(regex):
             lang.append(str(afn.transiciones[i]["=>"]))
         lang = set(lang)
         f.write(str(lang))
+        print(lang)
         f.write("\n")
         f.write(str(afn.estadoInicial))
         f.write("\n")
