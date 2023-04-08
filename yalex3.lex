@@ -1,4 +1,8 @@
-let digito = "2|1"
-let numero = "(2|1)((2|1))*"
-let letra = "a|b"
-let identificador = "(a|b)((a|b)|(2|1))*"
+let if = "if"
+let else = "else"
+let while = "while"
+let digito = "0|1|2|3|4|5|6|7|8|9"
+let letra = "a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s"
+let identificador = "letra(letra|digito)*"
+let numero = "digito+"
+

@@ -512,6 +512,7 @@ def convertir_lex(archivo):
     for n_linea, linea in enumerate(lineas, start=1):
         match = re.match(token_regex, linea.strip())
         if match:
+
             nombre = match.group(1)
             valor = match.group(2)
             # Verificar que no haya parentesis mal cerrados
@@ -540,6 +541,12 @@ def convertir_lex(archivo):
                     f"Error en línea {n_linea}: la definición de {nombre} contiene caracteres inválidos."
                 )
             tokens.append((nombre, valor))
+            # Verificar que el valor de cada token no esté vacío
+            for n_linea, (nombre, valor) in enumerate(tokens, start=1):
+                if valor == "":
+                    raise Exception(
+                        f"Error en línea {n_linea}: el valor del token {nombre} está vacío."
+                    )
 
     # Actualizar las definiciones en cada valor
     for i, (nombre, valor) in enumerate(tokens):
@@ -562,7 +569,7 @@ def convertir_lex(archivo):
 
 automatas = []
 # Leemos el archivo .yal y extraemos las reglas
-convertir_lex = convertir_lex("yalex1.lex")
+convertir_lex = convertir_lex("yalex3.lex")
 rules = read_yalex_file("yalex_actualizado.lex")
 print(rules)
 mega_automaton = None
