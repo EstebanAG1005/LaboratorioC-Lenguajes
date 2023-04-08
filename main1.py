@@ -51,7 +51,7 @@ def reescribiendoExpr(regex):
             if (
                 ((regex[i].isalpha() or regex[i].isdigit()) and regex[i - 1] != "(")
                 or regex[i] == "("
-            ) and (regex[i - 1] != "|" and regex[i - 1] != ")"):
+            ) and (regex[i - 1] != "|" and regex[i - 1] != "(" and regex[i - 1] != "."):
                 newExpr += "." + regex[i]
             else:
                 newExpr += regex[i]
@@ -196,14 +196,14 @@ def to_graphviz_horizontal(afn):
 
 def concat(nfa1, nfa2):
     afn = AFN()
-    # trabaja el AFN2
+    # work on nfa2
     maximum = max(nfa1.estados)
     for i in range(0, len(nfa2.transiciones)):
         nfa2.transiciones[i]["desde"] += maximum
         nfa2.transiciones[i]["hacia"] = list(
             np.add(maximum, nfa2.transiciones[i]["hacia"])
         )
-    # trabaja el self
+    # work on self
     newStates = np.add(maximum, np.array(list(nfa2.estados)))
     newStates = set(set(newStates).union(nfa1.estados))
     afn.estados = newStates
@@ -302,6 +302,14 @@ def kleene(afn):
         "=>": " ",
         "hacia": [nfaCopy.estadoInicial, nfaMain.estadoFinal],
     }
+    for state in nfaCopy.accept_states:
+        finalTransition1["hacia"].append(state + 1)
+        transition = {
+            "desde": state,
+            "=>": " ",
+            "hacia": [nfaCopy.estadoInicial, nfaMain.estadoFinal],
+        }
+        nfaCopy.transiciones.append(transition)
     nfaMain.transiciones.append(initialTransition)
     for transition in nfaCopy.transiciones:
         nfaMain.transiciones.append(transition)
@@ -370,6 +378,13 @@ def evaluatePostfix(regex):
                 result = conditional(afn)
                 print("?")
                 result.display()
+                # Add the epsilon transition from the initial state to the final state
+                epsilon_transition = {
+                    "desde": result.estadoInicial,
+                    "=>": " ",
+                    "hacia": [result.estadoFinal],
+                }
+                result.transiciones.append(epsilon_transition)
                 stack.push(result)
             elif token == "+":
                 afn = stack.pop()
