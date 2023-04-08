@@ -43,8 +43,9 @@ def reescribiendoExpr(regex):
                 "La expresión regular no puede contener espacios."
             )
         regex = regex.replace("ϵ", " ")
-        # definimos ϵ como vacio
-        # y definimos que coloque . donde hay concatenaciones, en el resto no
+        # replace non-valid characters with spaces
+        regex = re.sub(r"[^a-zA-Z0-9\(\)\|\+\*\?]", " ", regex)
+        # add dot for concatenation
         newExpr = regex[0]
         for i in range(1, len(regex)):
             if (
@@ -81,8 +82,8 @@ def topostfix(regex):
     jerar["+"] = 4
     jerar["*"] = 4
     jerar["?"] = 4
-    jerar["."] = 3
-    jerar["|"] = 2
+    jerar["|"] = 3
+    jerar["."] = 2
     jerar["("] = 1
     lista = list(regex)
     output = []
@@ -116,6 +117,7 @@ class AFN:
         self.estados = set()
         self.estadoFinal = None
         self.transiciones = []
+        self.accept_states = set()
 
     def basic(self, input):
         self.estadoInicial = 0
@@ -165,24 +167,29 @@ def to_graphviz_vertical(nfa):
     return dot
 
 
-def to_graphviz_horizontal(nfa):
-    dot = Digraph(graph_attr={"rankdir": "LR"})  # Set direction to left-to-right
-    dot.node(
-        "", style="invisible", shape="none"
-    )  # Add an empty invisible node at the start
-    for state in nfa.estados:
-        if state == nfa.estadoInicial:
-            dot.edge("", str(state), label="start")
-        elif state == nfa.estadoFinal:
-            dot.node(str(state), str(state), shape="doublecircle")
-        else:
-            dot.node(str(state), str(state))
-    for transition in nfa.transiciones:
-        for hacia in transition["hacia"]:
-            if transition["=>"] == " ":
-                dot.edge(str(transition["desde"]), str(hacia), label="ε")
+def to_graphviz_horizontal(afn):
+    dot = Digraph()
+    dot.format = "pdf"  # Cambiar el formato a PDF
+
+    dot.attr(rankdir="LR", size="8,5")
+    dot.attr("node", shape="doublecircle")
+    for (
+        accept_state
+    ) in afn.accept_states:  # Marcar estados de aceptación con doble círculo
+        dot.node(str(accept_state))
+
+    dot.attr("node", shape="circle")
+    dot.node("start", "", width="0.1", height="0.1")
+    dot.edge("start", str(afn.estadoInicial), label="")
+
+    for transicion in afn.transiciones:
+        for hacia in transicion["hacia"]:
+            if transicion["=>"] == " ":
+                label = "ε"
             else:
-                dot.edge(str(transition["desde"]), str(hacia), label=transition["=>"])
+                label = transicion["=>"]
+            dot.edge(str(transicion["desde"]), str(hacia), label=label)
+
     return dot
 
 
@@ -203,9 +210,13 @@ def concat(nfa1, nfa2):
     afn.estadoFinal = nfa2.estadoFinal + maximum
     for transition in nfa1.transiciones:
         afn.transiciones.append(transition)
-        print("hello", transition)
     for transition in nfa2.transiciones:
-        afn.transiciones.append(transition)
+        if transition["=>"] == " ":
+            # avoid adding ε transitions to the initial state of the second NFA
+            if transition["desde"] != nfa2.estadoInicial:
+                afn.transiciones.append(transition)
+        else:
+            afn.transiciones.append(transition)
     return afn
 
 
@@ -322,7 +333,7 @@ def evaluatePostfix(regex):
         return afn
     stack = Stack()
     for token in regex:
-        if token.isalpha() or token.isdigit() or token == " ":
+        if token.isalnum() or token == " ":
             afn = AFN()
             afn = afn.basic(token)
             stack.push(afn)
@@ -330,34 +341,24 @@ def evaluatePostfix(regex):
             if token == "*":
                 afn = stack.pop()
                 result = kleene(afn)
-                print("*")
-                result.display()
                 stack.push(result)
             elif token == ".":
                 nfa2 = stack.pop()
                 nfa1 = stack.pop()
                 result = concat(nfa1, nfa2)
-                print(".")
-                result.display()
                 stack.push(result)
             elif token == "|":
                 nfa2 = stack.pop()
                 nfa1 = stack.pop()
                 result = union(nfa1, nfa2)
-                print("|")
-                result.display()
                 stack.push(result)
             elif token == "?":
                 afn = stack.pop()
                 result = conditional(afn)
-                print("?")
-                result.display()
                 stack.push(result)
             elif token == "+":
                 afn = stack.pop()
                 result = plus(afn)
-                print("+")
-                result.display()
                 stack.push(result)
     afn = AFN()
     afn = stack.pop()
@@ -372,7 +373,6 @@ def evaluatePostfix(regex):
             lang.append(str(afn.transiciones[i]["=>"]))
         lang = set(lang)
         f.write(str(lang))
-        print(lang)
         f.write("\n")
         f.write(str(afn.estadoInicial))
         f.write("\n")
@@ -382,6 +382,50 @@ def evaluatePostfix(regex):
             f.write(str(transition) + ", ")
     # to_graphviz_vertical(afn).render("nfa.gv", view=True)
     return afn
+
+
+def generate_mega_automata(automatas):
+    mega_afn = AFN()
+    mega_afn.estadoInicial = 0
+    mega_afn.estados.add(mega_afn.estadoInicial)
+
+    current_max_state = 0
+
+    for idx, afn in enumerate(automatas):
+        current_max_state += 1
+        for state in afn.estados:
+            mega_afn.estados.add(state + current_max_state)
+
+        for transition in afn.transiciones:
+            new_transition = {
+                "desde": transition["desde"] + current_max_state,
+                "=>": transition["=>"],
+                "hacia": [hacia + current_max_state for hacia in transition["hacia"]],
+            }
+            mega_afn.transiciones.append(new_transition)
+
+        epsilon_transition = {
+            "desde": mega_afn.estadoInicial,
+            "=>": " ",
+            "hacia": [afn.estadoInicial + current_max_state],
+        }
+        mega_afn.transiciones.append(epsilon_transition)
+
+        # Añadir estados de aceptación del autómata actual al mega autómata
+        for accept_state in afn.accept_states:
+            mega_afn.accept_states.add(accept_state + current_max_state)
+
+        # Imprimir estados de aceptación del autómata actual
+        print(
+            f"Estados de aceptación del autómata {idx + 1}: {[state + current_max_state for state in afn.accept_states]}"
+        )
+
+        current_max_state = max(mega_afn.estados)
+
+    # Imprimir estados de aceptación del mega autómata
+    print(f"Estados de aceptación del mega autómata: {mega_afn.accept_states}")
+
+    return mega_afn
 
 
 graph_counter = 0
@@ -394,6 +438,7 @@ def ejecutar(regex):
     postfix = topostfix(regexprocess)
     print("Postfix: " + postfix)
     afn = evaluatePostfix(postfix)
+    afn.accept_states.add(afn.estadoFinal)  # Añadir esta línea
     to_graphviz_horizontal(afn).render("nfa{}.gv".format(graph_counter), view=True)
     graph_counter += 1
     return afn
@@ -416,42 +461,76 @@ def convert_yalex_regex(yalex_regex):
     return converted_regex.strip()
 
 
+import re
+
+
 def convertir_lex(archivo):
     # Abrir el archivo y leer todas las líneas
     with open(archivo, "r") as f:
         lineas = f.readlines()
 
-    # Diccionario para almacenar las definiciones
-    definiciones = {}
+    # Lista para almacenar los tokens
+    tokens = []
 
-    # Leer cada línea y almacenar las definiciones
-    for linea in lineas:
-        if linea.startswith("let"):
-            nombre, valor = linea.split("=")
-            definiciones[nombre.strip()] = valor.strip()
+    # Expresión regular para extraer el nombre y la expresión regular de cada token
+    token_regex = r'let\s+([a-zA-Z0-9]+)\s+=\s+"(.*)"'
 
-    # Reemplazar las definiciones en cada valor
-    for nombre, valor in definiciones.items():
-        for def_nombre, def_valor in definiciones.items():
-            expresion_regular = r"\b{}\b".format(def_nombre)
-            valor = re.sub(expresion_regular, "(" + def_valor + ")", valor)
-        definiciones[nombre] = valor
+    # Leer cada línea y almacenar los tokens
+    for n_linea, linea in enumerate(lineas, start=1):
+        match = re.match(token_regex, linea.strip())
+        if match:
+            nombre = match.group(1)
+            valor = match.group(2)
+            # Verificar que no haya parentesis mal cerrados
+            if valor.count("(") != valor.count(")"):
+                raise Exception(
+                    f"Error en línea {n_linea}: hay un número desigual de paréntesis en la definición de {nombre}."
+                )
+            # Verificar que no haya llaves mal cerradas
+            if valor.count("{") != valor.count("}"):
+                raise Exception(
+                    f"Error en línea {n_linea}: hay un número desigual de llaves en la definición de {nombre}."
+                )
+            # Verificar que no haya corchetes mal cerrados
+            if valor.count("[") != valor.count("]"):
+                raise Exception(
+                    f"Error en línea {n_linea}: hay un número desigual de corchetes en la definición de {nombre}."
+                )
+            # Verificar que no haya comillas mal cerradas
+            if valor.count('"') % 2 != 0:
+                raise Exception(
+                    f"Error en línea {n_linea}: hay un número impar de comillas en la definición de {nombre}."
+                )
+            # Verificar que solo haya caracteres válidos
+            if any(c in "@#$%" for c in valor):
+                raise Exception(
+                    f"Error en línea {n_linea}: la definición de {nombre} contiene caracteres inválidos."
+                )
+            tokens.append((nombre, valor))
+
+    # Actualizar las definiciones en cada valor
+    for i, (nombre, valor) in enumerate(tokens):
+        for j, (def_nombre, def_valor) in enumerate(tokens):
+            valor = valor.replace(def_nombre, "(" + def_valor + ")")
+            tokens[i] = (nombre, valor)
 
     # Escribir las definiciones actualizadas en un nuevo archivo
-    with open(archivo + "_actualizado", "w") as f:
-        for nombre, valor in definiciones.items():
-            definicion_actualizada = nombre + " = " + definiciones[nombre] + "\n"
+    archivo_actualizado = "yalex_actualizado.lex"
+    with open(archivo_actualizado, "w") as f:
+        for nombre, valor in tokens:
+            definicion_actualizada = f'let {nombre} = "{valor}"\n'
             f.write(definicion_actualizada)
 
     # Imprimir las definiciones actualizadas en la consola
-    for nombre, valor in definiciones.items():
-        definicion_actualizada = nombre + " = " + definiciones[nombre]
+    for nombre, valor in tokens:
+        definicion_actualizada = f"{nombre} = {valor}"
         print(definicion_actualizada)
 
 
+automatas = []
 # Leemos el archivo .yal y extraemos las reglas
 convertir_lex = convertir_lex("yalex1.lex")
-rules = read_yalex_file("yalex3.lex")
+rules = read_yalex_file("yalex_actualizado.lex")
 print(rules)
 mega_automaton = None
 for expr_name, yalex_regex in rules:
@@ -465,13 +544,11 @@ for expr_name, yalex_regex in rules:
     # Creamos un AFN para la expresión regular
     afn = ejecutar(regex)
 
-    # Unimos los AFN para crear el "mega autómata"
-    if mega_automaton is None:
-        mega_automaton = afn
-    else:
-        mega_automaton = concat(mega_automaton, afn)
+    # Añadir el autómata actual a la lista de autómatas
+    automatas.append(afn)
 
 # Mostramos el "mega autómata"
 print("\nMega Autómata:")
-mega_automaton.display()
+# Generar el Mega Autómata y visualizarlo
+mega_automaton = generate_mega_automata(automatas)
 to_graphviz_horizontal(mega_automaton).render("mega_automaton.gv", view=True)
