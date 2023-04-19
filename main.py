@@ -2,7 +2,6 @@ import re
 import numpy as np
 from copy import deepcopy
 import time
-import networkx as nx
 import matplotlib.pyplot as plt
 from graphviz import Digraph
 
@@ -609,24 +608,6 @@ desired_rules = [
     updated_rules[1],  # digito
 ]
 
-mega_automaton = None
-for expr_name, yalex_regex in rules:
-    print(f"Procesando expresión: {expr_name} -> {yalex_regex}")
-
-    # Convertimos la expresión regular de YALex a una expresión regular compatible
-    regex = convert_yalex_regex(yalex_regex)
-
-    print(f"Expresión regular convertida: {regex}")
-
-    # Creamos un AFN para la expresión regular
-    afn = ejecutar(regex)
-
-    # Añadir el autómata actual a la lista de autómatas
-    automatas.append(afn)
-
-# Mostramos el "mega autómata"
-print("\nMega Autómata:")
-# Generar el Mega Autómata y visualizarlo
 # Create the mega automaton with the desired rules
 mega_automaton = create_mega_automaton(desired_rules)
 to_graphviz_horizontal(mega_automaton).render("mega_automaton.gv", view=True)
