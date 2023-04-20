@@ -118,6 +118,7 @@ class AFN:
         self.estadoFinal = None
         self.transiciones = []
         self.accept_states = set()
+        self.nombre = None
 
     def basic(self, input):
         self.estadoInicial = 0
@@ -416,12 +417,15 @@ def evaluatePostfix(regex):
     return afn
 
 
-def generate_mega_automata(automatas):
+def generate_mega_automata(automatas, desired_rules):
     mega_afn = AFN()
     mega_afn.estadoInicial = 0
     mega_afn.estados.add(mega_afn.estadoInicial)
 
     current_max_state = 0
+
+    # Diccionario que relaciona cada estado de aceptación con su respectiva regla
+    accept_states_info = {}
 
     for idx, afn in enumerate(automatas):
         current_max_state += 1
@@ -445,19 +449,21 @@ def generate_mega_automata(automatas):
 
         # Añadir estados de aceptación del autómata actual al mega autómata
         for accept_state in afn.accept_states:
-            mega_afn.accept_states.add(accept_state + current_max_state)
-
-        # Imprimir estados de aceptación del autómata actual
-        print(
-            f"Estados de aceptación del autómata {idx + 1}: {[state + current_max_state for state in afn.accept_states]}"
-        )
+            state_with_offset = accept_state + current_max_state
+            mega_afn.accept_states.add(state_with_offset)
+            accept_states_info[state_with_offset] = desired_rules[idx][0]
 
         current_max_state = max(mega_afn.estados)
+
+    # Imprimir estados de aceptación del autómata actual
+    for state, rule in accept_states_info.items():
+        print(f"Estado {state} pertenece a la regla {rule}")
 
     # Imprimir estados de aceptación del mega autómata
     print(f"Estados de aceptación del mega autómata: {mega_afn.accept_states}")
 
     return mega_afn
+
 
 
 def create_mega_automaton(rules):
@@ -474,16 +480,25 @@ def create_mega_automaton(rules):
         # Creamos un AFN para la expresión regular
         afn = ejecutar(regex)
 
+        # Asignar el nombre del autómata
+        afn.nombre = expr_name
+
         # Añadir el autómata actual a la lista de autómatas
         automatas.append(afn)
+
+    # Crear una lista de diccionarios con la información adicional sobre los estados de aceptación
+    accept_states_info = []
+    for idx, rule in enumerate(rules):
+        expr_name, _ = rule
+        for state in automatas[idx].accept_states:
+            accept_states_info.append({"regla": expr_name, "estado": state})
 
     # Mostramos el "mega autómata"
     print("\nMega Autómata:")
     # Generar el Mega Autómata y visualizarlo
-    mega_automaton = generate_mega_automata(automatas)
+    mega_automaton = generate_mega_automata(automatas, desired_rules)
     to_graphviz_horizontal(mega_automaton).render("mega_automaton.gv", view=True)
     return mega_automaton
-
 
 graph_counter = 0
 
