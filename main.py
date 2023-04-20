@@ -465,7 +465,6 @@ def generate_mega_automata(automatas, desired_rules):
     return mega_afn, accept_states_info
 
 
-
 def create_mega_automaton(rules):
     automatas = []
     mega_automaton = None
@@ -496,10 +495,11 @@ def create_mega_automaton(rules):
     # Mostramos el "mega autómata"
     print("\nMega Autómata:")
     # Generar el Mega Autómata y visualizarlo
-    mega_automaton, accept_states_info = generate_mega_automata(automatas, desired_rules)
+    mega_automaton, accept_states_info = generate_mega_automata(
+        automatas, desired_rules
+    )
     to_graphviz_horizontal(mega_automaton).render("mega_automaton.gv", view=True)
     return mega_automaton, accept_states_info
-
 
 
 def process_text_with_afn(text, mega_afn, accept_states_info):
@@ -546,7 +546,6 @@ def process_text_with_afn(text, mega_afn, accept_states_info):
         results.append((rule, word))
 
     return results
-
 
 
 graph_counter = 0
@@ -700,23 +699,23 @@ def read_rule_tokens(file_path):
 
 
 # Read the rule tokens from the file
-rule_tokens = read_rule_tokens("yalex2.lex")
+rule_tokens = read_rule_tokens("yalex1.lex")
 
 automatas = []
 # Leemos el archivo .yal y extraemos las reglas
-all_rules = convertir_lex("yalex2.lex")
+all_rules = convertir_lex("yalex1.lex")
 
 # Apply read_yalex_file
 updated_rules = read_yalex_file("yalex_actualizado.lex")
 print(updated_rules)
 
 # Extract the desired rule names from the original YALex file based on the rule tokens
-desired_rule_names = extract_rule_names_from_yalex("yalex2.lex", rule_tokens)
+desired_rule_names = extract_rule_names_from_yalex("yalex1.lex", rule_tokens)
 
 # Get the desired rules based on their names
 desired_rules = get_desired_rules(desired_rule_names, updated_rules)
 
-text = "AB21 if 1 45555 ab"
+text = "if 0 1 2 3 4 5 6 7 8 9 0x1A 0xFF 0.5 3.1415 8. 123 A B C D E F G ABC123"
 
 # Crear el mega autómata con las reglas deseadas
 mega_automaton, accept_states_info = create_mega_automaton(desired_rules)
@@ -728,4 +727,3 @@ results = process_text_with_afn(text, mega_automaton, accept_states_info)
 # Imprimir los resultados
 for rule, matched_text in results:
     print(f"{matched_text} pertenece a la regla {rule}")
-
