@@ -636,18 +636,18 @@ def read_rule_tokens(file_path):
 
 
 # Read the rule tokens from the file
-rule_tokens = read_rule_tokens("yalex3.lex")
+rule_tokens = read_rule_tokens("yalex1.lex")
 
 automatas = []
 # Leemos el archivo .yal y extraemos las reglas
-all_rules = convertir_lex("yalex3.lex")
+all_rules = convertir_lex("yalex1.lex")
 
 # Apply read_yalex_file
 updated_rules = read_yalex_file("yalex_actualizado.lex")
 print(updated_rules)
 
 # Extract the desired rule names from the original YALex file based on the rule tokens
-desired_rule_names = extract_rule_names_from_yalex("yalex3.lex", rule_tokens)
+desired_rule_names = extract_rule_names_from_yalex("yalex1.lex", rule_tokens)
 
 # Get the desired rules based on their names
 desired_rules = get_desired_rules(desired_rule_names, updated_rules)
