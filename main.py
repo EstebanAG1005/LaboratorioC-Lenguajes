@@ -462,7 +462,7 @@ def generate_mega_automata(automatas, desired_rules):
     # Imprimir estados de aceptación del mega autómata
     print(f"Estados de aceptación del mega autómata: {mega_afn.accept_states}")
 
-    return mega_afn
+    return mega_afn, accept_states_info
 
 
 
@@ -496,9 +496,58 @@ def create_mega_automaton(rules):
     # Mostramos el "mega autómata"
     print("\nMega Autómata:")
     # Generar el Mega Autómata y visualizarlo
-    mega_automaton = generate_mega_automata(automatas, desired_rules)
+    mega_automaton, accept_states_info = generate_mega_automata(automatas, desired_rules)
     to_graphviz_horizontal(mega_automaton).render("mega_automaton.gv", view=True)
-    return mega_automaton
+    return mega_automaton, accept_states_info
+
+
+
+def process_text_with_afn(text, mega_afn, accept_states_info):
+    def epsilon_closure(states):
+        closure = set(states)
+
+        while True:
+            new_states = set()
+            for state in closure:
+                for transition in mega_afn.transiciones:
+                    if transition["desde"] == state and transition["=>"] == " ":
+                        new_states.update(transition["hacia"])
+
+            new_states -= closure
+
+            if not new_states:
+                break
+
+            closure.update(new_states)
+
+        return closure
+
+    results = []
+    words = text.split()
+
+    for word in words:
+        current_states = epsilon_closure([mega_afn.estadoInicial])
+
+        for char in word:
+            next_states = set()
+            for state in current_states:
+                for transition in mega_afn.transiciones:
+                    if transition["desde"] == state and transition["=>"] == char:
+                        next_states.update(transition["hacia"])
+
+            current_states = epsilon_closure(next_states)
+
+        rule = "no pertenece a la gramatica"
+        for state in current_states:
+            if state in mega_afn.accept_states:
+                rule = accept_states_info[state]
+                break
+
+        results.append((rule, word))
+
+    return results
+
+
 
 graph_counter = 0
 
@@ -651,22 +700,32 @@ def read_rule_tokens(file_path):
 
 
 # Read the rule tokens from the file
-rule_tokens = read_rule_tokens("yalex1.lex")
+rule_tokens = read_rule_tokens("yalex2.lex")
 
 automatas = []
 # Leemos el archivo .yal y extraemos las reglas
-all_rules = convertir_lex("yalex1.lex")
+all_rules = convertir_lex("yalex2.lex")
 
 # Apply read_yalex_file
 updated_rules = read_yalex_file("yalex_actualizado.lex")
 print(updated_rules)
 
 # Extract the desired rule names from the original YALex file based on the rule tokens
-desired_rule_names = extract_rule_names_from_yalex("yalex1.lex", rule_tokens)
+desired_rule_names = extract_rule_names_from_yalex("yalex2.lex", rule_tokens)
 
 # Get the desired rules based on their names
 desired_rules = get_desired_rules(desired_rule_names, updated_rules)
 
-# Create the mega automaton with the desired rules
-mega_automaton = create_mega_automaton(desired_rules)
+text = "AB21 if 1 45555 ab"
+
+# Crear el mega autómata con las reglas deseadas
+mega_automaton, accept_states_info = create_mega_automaton(desired_rules)
 to_graphviz_horizontal(mega_automaton).render("mega_automaton.gv", view=True)
+
+# Procesar la cadena de texto utilizando el mega autómata
+results = process_text_with_afn(text, mega_automaton, accept_states_info)
+
+# Imprimir los resultados
+for rule, matched_text in results:
+    print(f"{matched_text} pertenece a la regla {rule}")
+
