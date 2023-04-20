@@ -1,7 +1,7 @@
 digraph {
 	rankdir=LR size="8,5"
 	node [shape=doublecircle]
-	95
+	92
 	node [shape=circle]
 	start [label="" height=0.1 width=0.1]
 	start -> 0 [label=""]
@@ -121,7 +121,4 @@ digraph {
 	90 -> 91 [label="ε"]
 	91 -> 26 [label="ε"]
 	91 -> 92 [label="ε"]
-	92 -> 93 [label=x]
-	93 -> 94 [label=y]
-	94 -> 95 [label=z]
 }
