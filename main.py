@@ -459,6 +459,7 @@ def generate_mega_automata(automatas):
 
     return mega_afn
 
+
 def create_mega_automaton(rules):
     automatas = []
     mega_automaton = None
@@ -482,6 +483,7 @@ def create_mega_automaton(rules):
     mega_automaton = generate_mega_automata(automatas)
     to_graphviz_horizontal(mega_automaton).render("mega_automaton.gv", view=True)
     return mega_automaton
+
 
 graph_counter = 0
 
@@ -569,7 +571,6 @@ def convertir_lex(archivo):
                     raise Exception(
                         f"Error en línea {n_linea}: el valor del token {nombre} está vacío."
                     )
-    
 
     # Actualizar las definiciones en cada valor
     for i, (nombre, valor) in enumerate(tokens):
@@ -589,9 +590,53 @@ def convertir_lex(archivo):
         definicion_actualizada = f"{nombre} = {valor}"
         print(definicion_actualizada)
 
-
     return tokens
 
+
+def get_desired_rules(rule_names, all_rules):
+    desired_rules = []
+    for rule_name in rule_names:
+        for rule in all_rules:
+            if rule[0] == rule_name:
+                desired_rules.append(rule)
+                break
+    return desired_rules
+
+
+def extract_rule_names_from_yalex(file_path, rule_tokens):
+    with open(file_path, "r") as file:
+        content = file.read()
+
+    rule_names = []
+    rule_tokens_names = re.findall(r"\b(\w+)\b", rule_tokens)
+    for line in content.split("\n"):
+        if line.startswith("let"):
+            _, expr_name, _ = line.split(" ", 2)
+            if expr_name in rule_tokens_names:
+                rule_names.append(expr_name)
+    return rule_names
+
+
+def read_rule_tokens(file_path):
+    with open(file_path, "r") as file:
+        content = file.read()
+
+    rule_tokens = ""
+    in_rule_tokens = False
+    for line in content.split("\n"):
+        if line.startswith("rule tokens"):
+            in_rule_tokens = True
+            continue
+        if in_rule_tokens:
+            if not line.strip():
+                break
+            rule_tokens += line + "\n"
+
+    return rule_tokens
+
+
+# Read the rule tokens from the file
+rule_tokens = read_rule_tokens("yalex1.lex")
 
 automatas = []
 # Leemos el archivo .yal y extraemos las reglas
@@ -601,12 +646,11 @@ all_rules = convertir_lex("yalex1.lex")
 updated_rules = read_yalex_file("yalex_actualizado.lex")
 print(updated_rules)
 
-# Choose the desired rules
-desired_rules = [
-    updated_rules[0],  # if
-    updated_rules[4],  # identificador
-    updated_rules[1],  # digito
-]
+# Extract the desired rule names from the original YALex file based on the rule tokens
+desired_rule_names = extract_rule_names_from_yalex("yalex1.lex", rule_tokens)
+
+# Get the desired rules based on their names
+desired_rules = get_desired_rules(desired_rule_names, updated_rules)
 
 # Create the mega automaton with the desired rules
 mega_automaton = create_mega_automaton(desired_rules)

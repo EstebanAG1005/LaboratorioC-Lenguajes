@@ -1,10 +1,14 @@
 digraph {
 	rankdir=LR size="8,5"
 	node [shape=doublecircle]
-	2
+	5
 	node [shape=circle]
 	start [label="" height=0.1 width=0.1]
 	start -> 0 [label=""]
-	0 -> 1 [label=i]
-	1 -> 2 [label=f]
+	0 -> 1 [label="ε"]
+	0 -> 3 [label="ε"]
+	1 -> 2 [label=2]
+	3 -> 4 [label=1]
+	2 -> 5 [label="ε"]
+	4 -> 5 [label="ε"]
 }
