@@ -498,7 +498,7 @@ def create_mega_automaton(rules):
     mega_automaton, accept_states_info = generate_mega_automata(
         automatas, desired_rules
     )
-    to_graphviz_horizontal(mega_automaton).render("mega_automaton.gv", view=True)
+    # to_graphviz_horizontal(mega_automaton).render("mega_automaton.gv", view=True)
     return mega_automaton, accept_states_info
 
 
@@ -523,10 +523,15 @@ def process_text_with_afn(text, mega_afn, accept_states_info):
         return closure
 
     results = []
-    words = text.split()
+
+    # Modificar la forma en que se divide el texto en palabras
+    words = re.findall(r'"[^"]*"|\S+', text)
 
     for word in words:
         current_states = epsilon_closure([mega_afn.estadoInicial])
+
+        # Agregar un ajuste para manejar cadenas vacías correctamente
+        word = word.strip('"') if word.startswith('"') and word.endswith('"') else word
 
         for char in word:
             next_states = set()
@@ -559,7 +564,7 @@ def ejecutar(regex):
     print("Postfix: " + postfix)
     afn = evaluatePostfix(postfix)
     afn.accept_states.add(afn.estadoFinal)  # Añadir esta línea
-    to_graphviz_horizontal(afn).render("nfa{}.gv".format(graph_counter), view=True)
+    # to_graphviz_horizontal(afn).render("nfa{}.gv".format(graph_counter), view=True)
     graph_counter += 1
     return afn
 
@@ -699,27 +704,31 @@ def read_rule_tokens(file_path):
 
 
 # Read the rule tokens from the file
-rule_tokens = read_rule_tokens("yalex1.lex")
+rule_tokens = read_rule_tokens("yalex3.lex")
 
 automatas = []
 # Leemos el archivo .yal y extraemos las reglas
-all_rules = convertir_lex("yalex1.lex")
+all_rules = convertir_lex("yalex3.lex")
 
 # Apply read_yalex_file
 updated_rules = read_yalex_file("yalex_actualizado.lex")
 print(updated_rules)
 
 # Extract the desired rule names from the original YALex file based on the rule tokens
-desired_rule_names = extract_rule_names_from_yalex("yalex1.lex", rule_tokens)
+desired_rule_names = extract_rule_names_from_yalex("yalex3.lex", rule_tokens)
 
 # Get the desired rules based on their names
 desired_rules = get_desired_rules(desired_rule_names, updated_rules)
 
-text = "if 0 1 2 3 4 5 6 7 8 9 0x1A 0xFF 0.5 3.1415 8. 123 A B C D E F G ABC123"
+# text = "if 0 1 2 3 4 5 6 7 8 9 0x1A 0xFF 0.5 3.1415 8. 123 A B C D E F G ABC123"
+
+text = (
+    'if for 0 1 2 3 4 5 6 7 8 9 0.5 3.1415 8. 123 A B C D E F G ABC123xyz "123 456 ABC"'
+)
 
 # Crear el mega autómata con las reglas deseadas
 mega_automaton, accept_states_info = create_mega_automaton(desired_rules)
-to_graphviz_horizontal(mega_automaton).render("mega_automaton.gv", view=True)
+# to_graphviz_horizontal(mega_automaton).render("mega_automaton.gv", view=True)
 
 # Procesar la cadena de texto utilizando el mega autómata
 results = process_text_with_afn(text, mega_automaton, accept_states_info)
