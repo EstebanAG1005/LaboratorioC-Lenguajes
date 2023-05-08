@@ -11,25 +11,44 @@ class LexerRule:
 
 
 def parse_yalex(file_path):
-    with open(file_path, "r") as file:
-        content = file.read()
-
-    rule_pattern = re.compile(
-        r"let\s+(\w+)\s+=\s+\"(.+?)\"\n", re.MULTILINE | re.DOTALL
-    )
-    action_pattern = re.compile(r"rule\s+tokens\s*=\s*((?:.|\n)+?)$", re.MULTILINE)
-    rule_matches = rule_pattern.findall(content)
-    action_match = action_pattern.search(content)
-    action_lines = action_match.group(1).strip().split("\n")
-
     lexer_rules = []
-    for name, pattern in rule_matches:
-        action = ""
-        for line in action_lines:
-            if line.startswith(f"| {name}"):
-                action = line[len(name) + 3 :].strip()
-                break
-        lexer_rules.append(LexerRule(name, pattern, action))
+    current_rule_name = None
+    current_rule_pattern = None
+    current_rule_action = None
+
+    with open(file_path, "r") as file:
+        for line in file:
+            line = line.strip()
+
+            if line.startswith("let"):
+                if current_rule_name and current_rule_pattern:
+                    lexer_rules.append(
+                        LexerRule(
+                            current_rule_name, current_rule_pattern, current_rule_action
+                        )
+                    )
+                current_rule_name, current_rule_pattern = line.split()[1:3]
+                current_rule_action = None
+
+            elif line.startswith("rule tokens"):
+                if current_rule_name and current_rule_pattern:
+                    lexer_rules.append(
+                        LexerRule(
+                            current_rule_name, current_rule_pattern, current_rule_action
+                        )
+                    )
+                current_rule_name = None
+                current_rule_pattern = None
+                current_rule_action = None
+
+            elif line.startswith("|") and "return" in line:
+                token_name = line.strip().split()[1]
+                token_action = " ".join(line.strip().split()[2:])
+                for rule in lexer_rules:
+                    if rule.name == token_name:
+                        rule.action = token_action
+                        break
+
     return lexer_rules
 
 
@@ -76,8 +95,9 @@ def parse_yapar(file_path):
         if ":" in line:
             left, right = line.strip().split(":")
             non_terminals.add(left.strip())
-            for production in right.strip().split("|"):
-                rules.append((left.strip(), production.strip().split()))
+            productions = re.split(r"\s*\|\s*", right.strip())
+            for production in productions:
+                rules.append((left.strip(), production.split()))
 
     return Grammar(terminals, non_terminals, rules)
 
@@ -169,10 +189,13 @@ def first(grammar, symbol):
     first_set = set()
     for rule in grammar.rules:
         if rule[0] == symbol:
-            for s in rule[1]:
-                first_set.update(first(grammar, s))
-                if s not in grammar.nullables:
-                    break
+            if not rule[1]:  # Caso especial para la regla de producción vacía (epsilon)
+                first_set.add("")
+            else:
+                for s in rule[1]:
+                    first_set.update(first(grammar, s))
+                    if s not in grammar.nullables:
+                        break
     return first_set
 
 
@@ -230,12 +253,18 @@ def visualize_lr0_graph(states, transitions, output_filename="lr0_graph.gv"):
 
 
 if __name__ == "__main__":
-    grammar = parse_yapar("LabE\yapar_file.txt")
-    yalex_rules = parse_yalex("LabE\yalex_file.txt")
+    grammar = parse_yapar("LabE\slr-1.yalp")
+    yalex_rules = parse_yalex("LabE\slr-1.yal")
 
     # Validar tokens
     yalex_tokens = {rule.name for rule in yalex_rules}
     yapar_tokens = grammar.terminals
+
+    print("Tokens en YALex:")
+    print(yalex_tokens)
+    print("Tokens en YAPar:")
+    print(yapar_tokens)
+
     if not yapar_tokens.issubset(yalex_tokens):
         print(
             "Error: Algunos tokens en el archivo YAPar no están presentes en el archivo YALex."
@@ -243,7 +272,11 @@ if __name__ == "__main__":
     else:
         print("Validación de tokens exitosa.")
 
-    # Calcular conjuntos Primero y Siguiente
+    missing_tokens = yapar_tokens - yalex_tokens
+    if missing_tokens:
+        print(f"Tokens faltantes en YALex: {missing_tokens}")
+
+    # Aquí, después de procesar YALex, calcular los conjuntos Primero y Siguiente
     first_sets = {symbol: first(grammar, symbol) for symbol in grammar.non_terminals}
     follow_sets = compute_follow(grammar)
 
