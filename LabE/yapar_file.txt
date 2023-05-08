@@ -1,0 +1,19 @@
+%token IF FOR DIGITO NUMERO NUMERODECIMAL LETRA IDENTIFICADOR CADENA
+
+IGNORE ESPACIO
+
+%%
+
+Programa: Sentencias
+
+Sentencias: Sentencia
+          | Sentencias Sentencia
+
+Sentencia: IF
+         | FOR
+         | DIGITO
+         | NUMERO
+         | NUMERODECIMAL
+         | LETRA
+         | IDENTIFICADOR
+         | CADENA

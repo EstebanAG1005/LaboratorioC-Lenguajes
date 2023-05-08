@@ -1,0 +1,21 @@
+let IF = "if"
+let FOR = "for"
+let DIGITO = "0|1|2|3|4|5|6|7|8|9"
+let NUMERO = "DIGITO(DIGITO)*"
+let NUMERODECIMAL = "(((DIGITO)+\\.(DIGITO)*)|(\\.(DIGITO)+))"
+let LETRA = "a|b|c|d|e|f|g|A|B|C|D|E|F|G"
+let IDENTIFICADOR = "LETRA(LETRA|DIGITO)*xyz"
+let ESPACIO = "\\s"
+let CONTENIDOCADENA = "((NUMERO|LETRA|ESPACIO)+)"
+let CADENA = "\"CONTENIDOCADENA\""
+
+
+rule tokens =
+  IF { print("if\n") }
+  | FOR { print("for\n") }
+  | DIGITO			{ print("Dígito\n") }
+  | NUMERO			{ print("Numero\n") }
+  | NUMERODECIMAL { print("Numero Decimal\n") }
+  | LETRA			{ print("Letra\n") }
+  | IDENTIFICADOR	{ print("Identificador\n") }
+  | CADENA         { print("Cadena\n") }

@@ -1,0 +1,16 @@
+digraph LR0 {
+	rankdir=LR size="8,5"
+	0 [label="State 0
+Programa -> ().('Sentencias',)
+Sentencia -> ().('IF',)
+Sentencias -> ().('Sentencia',)" shape=rectangle]
+	1 [label="State 1
+Sentencia -> ('IF',).()" shape=rectangle]
+	2 [label="State 2
+Sentencias -> ('Sentencia',).()" shape=rectangle]
+	3 [label="State 3
+Programa -> ('Sentencias',).()" shape=rectangle]
+	0 -> 1 [label=IF]
+	0 -> 2 [label=Sentencia]
+	0 -> 3 [label=Sentencias]
+}
