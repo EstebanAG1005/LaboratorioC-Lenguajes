@@ -189,13 +189,12 @@ def first(grammar, symbol):
     first_set = set()
     for rule in grammar.rules:
         if rule[0] == symbol:
-            if not rule[1]:  # Caso especial para la regla de producción vacía (epsilon)
-                first_set.add("")
-            else:
-                for s in rule[1]:
-                    first_set.update(first(grammar, s))
-                    if s not in grammar.nullables:
-                        break
+            for s in rule[1]:
+                first_set.update(first(grammar, s))
+                if s not in grammar.nullables:
+                    break
+                if s in grammar.nullables:
+                    first_set.add("")
     return first_set
 
 
@@ -253,8 +252,8 @@ def visualize_lr0_graph(states, transitions, output_filename="lr0_graph.gv"):
 
 
 if __name__ == "__main__":
-    grammar = parse_yapar("LabE\slr-1.yalp")
-    yalex_rules = parse_yalex("LabE\slr-1.yal")
+    grammar = parse_yapar("LabE/slr-1.yalp")
+    yalex_rules = parse_yalex("LabE/slr-1.yal")
 
     # Validar tokens
     yalex_tokens = {rule.name for rule in yalex_rules}
