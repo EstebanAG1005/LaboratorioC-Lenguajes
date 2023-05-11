@@ -12,44 +12,26 @@ class LexerRule:
 
 def parse_yalex(file_path):
     lexer_rules = []
-    current_rule_name = None
-    current_rule_pattern = None
-    current_rule_action = None
+    inside_tokens_rule = False
 
     with open(file_path, "r") as file:
         for line in file:
             line = line.strip()
 
-            if line.startswith("let"):
-                if current_rule_name and current_rule_pattern:
-                    lexer_rules.append(
-                        LexerRule(
-                            current_rule_name, current_rule_pattern, current_rule_action
-                        )
-                    )
-                current_rule_name, current_rule_pattern = line.split()[1:3]
-                current_rule_action = None
+            if line.startswith("rule tokens"):
+                inside_tokens_rule = True
+                continue
 
-            elif line.startswith("rule tokens"):
-                if current_rule_name and current_rule_pattern:
-                    lexer_rules.append(
-                        LexerRule(
-                            current_rule_name, current_rule_pattern, current_rule_action
-                        )
-                    )
-                current_rule_name = None
-                current_rule_pattern = None
-                current_rule_action = None
-
-            elif line.startswith("|") and "return" in line:
-                token_name = line.strip().split()[1]
-                token_action = " ".join(line.strip().split()[2:])
-                for rule in lexer_rules:
-                    if rule.name == token_name:
-                        rule.action = token_action
-                        break
+            if inside_tokens_rule:
+                if ("|" in line or "ws" in line) and "return" in line:
+                    # Se extrae el nombre del token que está después de 'return'
+                    token_name = line.split("return")[1].split("}")[0].strip()
+                    lexer_rules.append(LexerRule(token_name, None, None))
 
     return lexer_rules
+
+
+
 
 
 class Grammar:
@@ -71,35 +53,48 @@ class Grammar:
                     change = True
         return nullables
 
-
 def parse_yapar(file_path):
     with open(file_path, "r") as file:
-        content = file.read()
+        content = file.readlines()
 
-    token_pattern = re.compile(r"%token\s+((?:\w+\s*)+)\n", re.MULTILINE)
-    ignore_pattern = re.compile(r"IGNORE\s+((?:\w+\s*)+)\n", re.MULTILINE)
-    rule_pattern = re.compile(r"%%\n((?:.|\n)+)$", re.MULTILINE)
+    token_pattern = re.compile(r"^%token\s+((?:\w+\s*)+)$")
+    ignore_pattern = re.compile(r"^IGNORE\s+((?:\w+\s*)+)$")
+    rule_pattern = re.compile(r"%%\n((?:.|\n)+)$")
 
-    token_match = token_pattern.search(content)
-    ignore_match = ignore_pattern.search(content)
-    rule_match = rule_pattern.search(content)
+    terminals = set()
+    ignored = set()
 
-    terminals = set(token_match.group(1).strip().split())
-    ignored = set(ignore_match.group(1).strip().split())
-    rule_lines = rule_match.group(1).strip().split("\n")
+    for line in content:
+        token_match = token_pattern.match(line)
+        if token_match:
+            terminals.update(token_match.group(1).strip().split())
+
+        ignore_match = ignore_pattern.match(line)
+        if ignore_match:
+            ignored.update(ignore_match.group(1).strip().split())
+
+    terminals -= ignored
+
+    rule_content_index = content.index("%%\n") + 1
+    rule_lines = content[rule_content_index:]
 
     non_terminals = set()
     rules = []
 
+    # Concatenar todas las líneas de una misma regla en una sola línea
+    rule_lines = "".join([line.strip() for line in rule_lines]).split(";")
+    
     for line in rule_lines:
+        line = line.strip()
         if ":" in line:
-            left, right = line.strip().split(":")
+            left, right = re.split(r"\s*:\s*", line.strip(), 1)
             non_terminals.add(left.strip())
             productions = re.split(r"\s*\|\s*", right.strip())
             for production in productions:
                 rules.append((left.strip(), production.split()))
 
     return Grammar(terminals, non_terminals, rules)
+
 
 
 class LR0Item:
@@ -184,18 +179,25 @@ def visualize_lr0(states, transitions):
 
 
 def first(grammar, symbol):
+    print(f"Calculating first({symbol})")
     if symbol in grammar.terminals:
+        print(f"  {symbol} is a terminal")
         return {symbol}
     first_set = set()
     for rule in grammar.rules:
         if rule[0] == symbol:
+            print(f"  Checking rule {rule}")
             for s in rule[1]:
-                first_set.update(first(grammar, s))
+                s_first = first(grammar, s)
+                print(f"    first({s}) = {s_first}")
+                first_set.update(s_first)
                 if s not in grammar.nullables:
                     break
-                if s in grammar.nullables:
-                    first_set.add("")
+            else:
+                print(f"  {symbol} is nullable")
+                first_set.add("")
     return first_set
+
 
 
 def first_star(grammar, sequence):
@@ -227,8 +229,11 @@ def compute_follow(grammar):
 
 
 def visualize_lr0_graph(states, transitions, output_filename="lr0_graph.gv"):
-    dot = Digraph("LR0", filename=output_filename, format="png")
-    dot.attr(rankdir="LR", size="8,5")
+    dot = Digraph("LR0", filename=output_filename, format="pdf")
+    dot.attr(rankdir="LR", size="15,10")  # aumenta el tamaño del gráfico
+    dot.attr(fontsize='14')  # aumenta el tamaño de la fuente
+    dot.attr(ranksep='1')  # aumenta el espacio entre los rangos de nodos
+    dot.attr(nodesep='1')  # aumenta el espacio entre los nodos en el mismo rango
 
     # Agrega los estados al gráfico
     for i, state in enumerate(states):
@@ -290,5 +295,5 @@ if __name__ == "__main__":
     states, transitions = lr0(grammar)
     visualize_lr0(states, transitions)
 
-    states, transitions = lr0(grammar)
     visualize_lr0_graph(states, transitions)
+

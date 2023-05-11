@@ -1,5 +1,81 @@
 digraph LR0 {
-	rankdir=LR size="8,5"
+	rankdir=LR size="15,10"
+	fontsize=14
+	ranksep=1
+	nodesep=1
 	0 [label="State 0
-expression -> ().()" shape=rectangle]
+expression -> ().('term', 'expression_rest')
+factor -> ().('ID',)
+factor -> ().('LPAREN', 'expression', 'RPAREN')
+term -> ().('factor', 'term_rest')" shape=rectangle]
+	1 [label="State 1
+term -> ('factor',).('term_rest',)
+term_rest -> ().('/*', 'empty', 'production', '*/')
+term_rest -> ().('TIMES', 'factor', 'term_rest')" shape=rectangle]
+	2 [label="State 2
+expression -> ('term',).('expression_rest',)
+expression_rest -> ().('/*', 'empty', 'production', '*/')
+expression_rest -> ().('PLUS', 'term', 'expression_rest')" shape=rectangle]
+	3 [label="State 3
+factor -> ('ID',).()" shape=rectangle]
+	4 [label="State 4
+expression -> ().('term', 'expression_rest')
+factor -> ().('ID',)
+factor -> ().('LPAREN', 'expression', 'RPAREN')
+factor -> ('LPAREN',).('expression', 'RPAREN')
+term -> ().('factor', 'term_rest')" shape=rectangle]
+	5 [label="State 5
+factor -> ('LPAREN', 'expression').('RPAREN',)" shape=rectangle]
+	6 [label="State 6
+factor -> ('LPAREN', 'expression', 'RPAREN').()" shape=rectangle]
+	7 [label="State 7
+expression -> ('term', 'expression_rest').()" shape=rectangle]
+	8 [label="State 8
+expression_rest -> ('PLUS',).('term', 'expression_rest')
+factor -> ().('ID',)
+factor -> ().('LPAREN', 'expression', 'RPAREN')
+term -> ().('factor', 'term_rest')" shape=rectangle]
+	9 [label="State 9
+expression_rest -> ().('/*', 'empty', 'production', '*/')
+expression_rest -> ().('PLUS', 'term', 'expression_rest')
+expression_rest -> ('PLUS', 'term').('expression_rest',)" shape=rectangle]
+	10 [label="State 10
+expression_rest -> ('PLUS', 'term', 'expression_rest').()" shape=rectangle]
+	11 [label="State 11
+term -> ('factor', 'term_rest').()" shape=rectangle]
+	12 [label="State 12
+factor -> ().('ID',)
+factor -> ().('LPAREN', 'expression', 'RPAREN')
+term_rest -> ('TIMES',).('factor', 'term_rest')" shape=rectangle]
+	13 [label="State 13
+term_rest -> ().('/*', 'empty', 'production', '*/')
+term_rest -> ().('TIMES', 'factor', 'term_rest')
+term_rest -> ('TIMES', 'factor').('term_rest',)" shape=rectangle]
+	14 [label="State 14
+term_rest -> ('TIMES', 'factor', 'term_rest').()" shape=rectangle]
+	0 -> 3 [label=ID]
+	0 -> 4 [label=LPAREN]
+	0 -> 1 [label=factor]
+	0 -> 2 [label=term]
+	1 -> 12 [label=TIMES]
+	1 -> 11 [label=term_rest]
+	2 -> 8 [label=PLUS]
+	2 -> 7 [label=expression_rest]
+	4 -> 3 [label=ID]
+	4 -> 4 [label=LPAREN]
+	4 -> 5 [label=expression]
+	4 -> 1 [label=factor]
+	4 -> 2 [label=term]
+	5 -> 6 [label=RPAREN]
+	8 -> 3 [label=ID]
+	8 -> 4 [label=LPAREN]
+	8 -> 1 [label=factor]
+	8 -> 9 [label=term]
+	9 -> 8 [label=PLUS]
+	9 -> 10 [label=expression_rest]
+	12 -> 3 [label=ID]
+	12 -> 4 [label=LPAREN]
+	12 -> 13 [label=factor]
+	13 -> 12 [label=TIMES]
+	13 -> 14 [label=term_rest]
 }
