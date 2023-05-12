@@ -1,0 +1,125 @@
+digraph LR0 {
+	rankdir=LR size="15,10"
+	fontsize=14
+	ranksep=1
+	nodesep=1
+	0 [label="State 0
+expression -> . expression MINUS term
+expression -> . expression PLUS term
+expression -> . term
+factor -> . ID
+factor -> . LPAREN expression RPAREN
+factor -> . NUMBER
+term -> . factor
+term -> . term DIV factor
+term -> . term TIMES factor" shape=rectangle]
+	1 [label="State 1
+expression -> term .
+term -> term . DIV factor
+term -> term . TIMES factor" shape=rectangle]
+	2 [label="State 2
+factor -> NUMBER ." shape=rectangle]
+	3 [label="State 3
+expression -> expression . MINUS term
+expression -> expression . PLUS term" shape=rectangle]
+	4 [label="State 4
+term -> factor ." shape=rectangle]
+	5 [label="State 5
+factor -> ID ." shape=rectangle]
+	6 [label="State 6
+expression -> . expression MINUS term
+expression -> . expression PLUS term
+expression -> . term
+factor -> . ID
+factor -> . LPAREN expression RPAREN
+factor -> LPAREN . expression RPAREN
+factor -> . NUMBER
+term -> . factor
+term -> . term DIV factor
+term -> . term TIMES factor" shape=rectangle]
+	7 [label="State 7
+expression -> expression . MINUS term
+expression -> expression . PLUS term
+factor -> LPAREN expression . RPAREN" shape=rectangle]
+	8 [label="State 8
+expression -> expression MINUS . term
+factor -> . ID
+factor -> . LPAREN expression RPAREN
+factor -> . NUMBER
+term -> . factor
+term -> . term DIV factor
+term -> . term TIMES factor" shape=rectangle]
+	9 [label="State 9
+expression -> expression PLUS . term
+factor -> . ID
+factor -> . LPAREN expression RPAREN
+factor -> . NUMBER
+term -> . factor
+term -> . term DIV factor
+term -> . term TIMES factor" shape=rectangle]
+	10 [label="State 10
+factor -> LPAREN expression RPAREN ." shape=rectangle]
+	11 [label="State 11
+expression -> expression PLUS term .
+term -> term . DIV factor
+term -> term . TIMES factor" shape=rectangle]
+	12 [label="State 12
+factor -> . ID
+factor -> . LPAREN expression RPAREN
+factor -> . NUMBER
+term -> term DIV . factor" shape=rectangle]
+	13 [label="State 13
+factor -> . ID
+factor -> . LPAREN expression RPAREN
+factor -> . NUMBER
+term -> term TIMES . factor" shape=rectangle]
+	14 [label="State 14
+term -> term TIMES factor ." shape=rectangle]
+	15 [label="State 15
+term -> term DIV factor ." shape=rectangle]
+	16 [label="State 16
+expression -> expression MINUS term .
+term -> term . DIV factor
+term -> term . TIMES factor" shape=rectangle]
+	0 -> 5 [label=ID]
+	0 -> 6 [label=LPAREN]
+	0 -> 2 [label=NUMBER]
+	0 -> 3 [label=expression]
+	0 -> 4 [label=factor]
+	0 -> 1 [label=term]
+	1 -> 12 [label=DIV]
+	1 -> 13 [label=TIMES]
+	3 -> 8 [label=MINUS]
+	3 -> 9 [label=PLUS]
+	6 -> 5 [label=ID]
+	6 -> 6 [label=LPAREN]
+	6 -> 2 [label=NUMBER]
+	6 -> 7 [label=expression]
+	6 -> 4 [label=factor]
+	6 -> 1 [label=term]
+	7 -> 8 [label=MINUS]
+	7 -> 9 [label=PLUS]
+	7 -> 10 [label=RPAREN]
+	8 -> 5 [label=ID]
+	8 -> 6 [label=LPAREN]
+	8 -> 2 [label=NUMBER]
+	8 -> 4 [label=factor]
+	8 -> 16 [label=term]
+	9 -> 5 [label=ID]
+	9 -> 6 [label=LPAREN]
+	9 -> 2 [label=NUMBER]
+	9 -> 4 [label=factor]
+	9 -> 11 [label=term]
+	11 -> 12 [label=DIV]
+	11 -> 13 [label=TIMES]
+	12 -> 5 [label=ID]
+	12 -> 6 [label=LPAREN]
+	12 -> 2 [label=NUMBER]
+	12 -> 15 [label=factor]
+	13 -> 5 [label=ID]
+	13 -> 6 [label=LPAREN]
+	13 -> 2 [label=NUMBER]
+	13 -> 14 [label=factor]
+	16 -> 12 [label=DIV]
+	16 -> 13 [label=TIMES]
+}

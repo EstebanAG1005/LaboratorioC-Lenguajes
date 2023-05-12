@@ -11,8 +11,8 @@
 %token DIV
 %token NUMBER
 %token LPAREN RPAREN
-%token WHITESPACE
-IGNORE WHITESPACE
+token WHITESPACE
+IGNORE WHITESPACE UNKNOWN_TOKEN
 
 %%
 
@@ -22,8 +22,8 @@ expression:
   | term
 ;
 term:
-    term TIMES factor
-  | term DIV factor
+    term UNKNOWN_TOKEN factor
+  | term DIV unknown_non_terminal
   | factor
 ;
 factor:
@@ -31,3 +31,4 @@ factor:
   | ID
   | NUMBER
 ;
+empty_rule:

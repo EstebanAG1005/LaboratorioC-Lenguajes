@@ -274,7 +274,7 @@ def compute_follow(grammar):
     return follow
 
 
-def visualize_lr0_graph(states, transitions, output_filename="lr0_graph.gv"):
+def visualize_lr0_graph(states, transitions, output_filename="lr1_graph.gv"):
     dot = Digraph("LR0", filename=output_filename, format="pdf")
     dot.attr(rankdir="LR", size="15,10")  # aumenta el tamaño del gráfico
     dot.attr(fontsize="14")  # aumenta el tamaño de la fuente
@@ -303,8 +303,8 @@ def visualize_lr0_graph(states, transitions, output_filename="lr0_graph.gv"):
 
 
 if __name__ == "__main__":
-    grammar = parse_yapar("LabE/slr-1.yalp")
-    yalex_rules = parse_yalex("LabE/slr-1.yal")
+    grammar = parse_yapar("LabE/slr-2.yalp")
+    yalex_rules = parse_yalex("LabE/slr-2.yal")
 
     # Validar tokens
     yalex_tokens = {rule.name for rule in yalex_rules}
