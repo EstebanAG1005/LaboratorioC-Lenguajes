@@ -101,7 +101,9 @@ class LR0Item:
         self.lookahead = lookahead
 
     def __repr__(self):
-        return f"{self.left} -> {self.right[:self.lookahead]}.{self.right[self.lookahead:]}"
+        right_repr = list(map(str, self.right))
+        right_repr.insert(self.lookahead, ".")
+        return f"{self.left} -> {' '.join(right_repr)}"
 
     def __eq__(self, other):
         return (
