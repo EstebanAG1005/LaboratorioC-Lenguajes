@@ -71,6 +71,12 @@ def parse_yapar(file_path):
         if ignore_match:
             ignored.update(ignore_match.group(1).strip().split())
 
+    # Verificar que todos los tokens ignorados estén definidos
+    if not ignored.issubset(terminals):
+        print(
+            f"Error: Algunos tokens ignorados no están definidos: {ignored - terminals}"
+        )
+
     terminals -= ignored
 
     rule_content_index = content.index("%%\n") + 1
@@ -88,8 +94,18 @@ def parse_yapar(file_path):
             left, right = re.split(r"\s*:\s*", line.strip(), 1)
             non_terminals.add(left.strip())
             productions = re.split(r"\s*\|\s*", right.strip())
+            # Verificar que cada regla tenga al menos una producción
+            if not productions:
+                print(f"Error: La regla '{left}' no tiene ninguna producción")
             for production in productions:
-                rules.append((left.strip(), production.split()))
+                symbols = production.split()
+                for symbol in symbols:
+                    # Verificar que cada símbolo esté definido
+                    if symbol not in terminals and symbol not in non_terminals:
+                        print(
+                            f"Error: Símbolo no definido '{symbol}' en la regla '{left}'"
+                        )
+                rules.append((left.strip(), symbols))
 
     return Grammar(terminals, non_terminals, rules)
 
@@ -273,8 +289,8 @@ def visualize_lr0_graph(states, transitions, output_filename="lr0_graph.gv"):
 
 
 if __name__ == "__main__":
-    grammar = parse_yapar("LabE/slr-1.yalp")
-    yalex_rules = parse_yalex("LabE/slr-1.yal")
+    grammar = parse_yapar("LabE/slr-2.yalp")
+    yalex_rules = parse_yalex("LabE/slr-2.yal")
 
     # Validar tokens
     yalex_tokens = {rule.name for rule in yalex_rules}
