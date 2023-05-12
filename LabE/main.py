@@ -51,6 +51,9 @@ class Grammar:
         return nullables
 
 
+import re
+
+
 def parse_yapar(file_path):
     with open(file_path, "r") as file:
         content = file.readlines()
@@ -104,14 +107,20 @@ def parse_yapar(file_path):
         if ":" in line:
             left, right = re.split(r"\s*:\s*", line.strip(), 1)
             productions = re.split(r"\s*\|\s*", right.strip())
-            for production in productions:
-                rule = (left.strip(), production.split())
-                # check for undefined tokens and non-terminals
-                for symbol in rule[1]:
-                    if symbol not in terminals and symbol not in non_terminals:
-                        print(f"Error: símbolo no definido '{symbol}' usado en la regla '{line}'")
-                        errors_found = True
-                rules.append(rule)
+            if not productions or (len(productions) == 1 and not productions[0]):
+                print(f"Error: regla sin producciones '{line}'")
+                errors_found = True
+            else:
+                for production in productions:
+                    rule = (left.strip(), production.split())
+                    # check for undefined tokens and non-terminals
+                    for symbol in rule[1]:
+                        if symbol not in terminals and symbol not in non_terminals:
+                            print(
+                                f"Error: símbolo no definido '{symbol}' usado en la regla '{line}'"
+                            )
+                            errors_found = True
+                    rules.append(rule)
         elif line != "":
             print(f"Error: regla sin producciones '{line}'")
             errors_found = True
@@ -121,7 +130,6 @@ def parse_yapar(file_path):
         exit()
 
     return Grammar(terminals, non_terminals, rules)
-
 
 
 class LR0Item:
@@ -303,8 +311,8 @@ def visualize_lr0_graph(states, transitions, output_filename="lr1_graph.gv"):
 
 
 if __name__ == "__main__":
-    grammar = parse_yapar("LabE/slr-2.yalp")
-    yalex_rules = parse_yalex("LabE/slr-2.yal")
+    grammar = parse_yapar("LabE/slr-2-e.yalp")
+    yalex_rules = parse_yalex("LabE/slr-1.yal")
 
     # Validar tokens
     yalex_tokens = {rule.name for rule in yalex_rules}
@@ -325,6 +333,7 @@ if __name__ == "__main__":
     missing_tokens = yapar_tokens - yalex_tokens
     if missing_tokens:
         print(f"Tokens faltantes en YALex: {missing_tokens}")
+        exit()
 
     # Aquí, después de procesar YALex, calcular los conjuntos Primero y Siguiente
     first_sets = {symbol: first(grammar, symbol) for symbol in grammar.non_terminals}
