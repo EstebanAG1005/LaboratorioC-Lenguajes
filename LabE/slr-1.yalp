@@ -14,25 +14,14 @@ IGNORE WS
 %%
 
 expression:
-    term expression_rest
+    expression PLUS term
+  | term
 ;
-
-expression_rest:
-    PLUS term expression_rest
-  | /* empty production */
-;
-
 term:
-    factor term_rest
+    term TIMES factor
+  | factor
 ;
-
-term_rest:
-    TIMES factor term_rest
-  | /* empty production */
-;
-
 factor:
     LPAREN expression RPAREN
   | ID
 ;
-

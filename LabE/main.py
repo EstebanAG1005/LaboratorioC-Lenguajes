@@ -31,9 +31,6 @@ def parse_yalex(file_path):
     return lexer_rules
 
 
-
-
-
 class Grammar:
     def __init__(self, terminals, non_terminals, rules):
         self.terminals = terminals
@@ -52,6 +49,7 @@ class Grammar:
                     nullables.add(left)
                     change = True
         return nullables
+
 
 def parse_yapar(file_path):
     with open(file_path, "r") as file:
@@ -83,7 +81,7 @@ def parse_yapar(file_path):
 
     # Concatenar todas las líneas de una misma regla en una sola línea
     rule_lines = "".join([line.strip() for line in rule_lines]).split(";")
-    
+
     for line in rule_lines:
         line = line.strip()
         if ":" in line:
@@ -94,7 +92,6 @@ def parse_yapar(file_path):
                 rules.append((left.strip(), production.split()))
 
     return Grammar(terminals, non_terminals, rules)
-
 
 
 class LR0Item:
@@ -129,7 +126,11 @@ def closure(grammar, items):
                 for rule in grammar.rules
                 if rule[0] == item.right[item.lookahead]
             ]
-            closure_set |= closure(grammar, new_items)
+            # Comprobar si los nuevos elementos ya están en 'closure_set'
+            new_items = [item for item in new_items if item not in closure_set]
+
+            if new_items:
+                closure_set |= closure(grammar, new_items)
     return closure_set
 
 
@@ -178,26 +179,36 @@ def visualize_lr0(states, transitions):
         print(f"State {states.index(t[0])} --{t[1]}--> State {states.index(t[2])}")
 
 
-def first(grammar, symbol):
-    print(f"Calculating first({symbol})")
-    if symbol in grammar.terminals:
-        print(f"  {symbol} is a terminal")
-        return {symbol}
+def first(grammar, symbol, seen=None):
+    if seen is None:
+        seen = set()
+    elif symbol in seen:
+        return set()
+
+    seen.add(symbol)
+
     first_set = set()
+
+    # Si el símbolo es terminal, agregarlo al conjunto FIRST y retornarlo
+    if symbol in grammar.terminals:
+        first_set.add(symbol)
+        return first_set
+
+    # Si el símbolo es no terminal, calcular FIRST para cada regla que comienza con ese símbolo
     for rule in grammar.rules:
         if rule[0] == symbol:
-            print(f"  Checking rule {rule}")
             for s in rule[1]:
-                s_first = first(grammar, s)
-                print(f"    first({s}) = {s_first}")
-                first_set.update(s_first)
-                if s not in grammar.nullables:
+                if s in grammar.terminals:
+                    first_set.add(s)
                     break
+                else:
+                    first_set |= first(grammar, s, seen)
+                    if "" not in first_set:
+                        break
             else:
-                print(f"  {symbol} is nullable")
                 first_set.add("")
-    return first_set
 
+    return first_set
 
 
 def first_star(grammar, sequence):
@@ -216,24 +227,27 @@ def compute_follow(grammar):
     while change:
         change = False
         for left, right in grammar.rules:
-            for i, symbol in enumerate(right):
+            follow_set = follow[left]
+            for symbol in reversed(right):
                 if symbol in grammar.non_terminals:
-                    new_follow = first_star(grammar, right[i + 1 :])
-                    if "$" in new_follow:
-                        new_follow.remove("$")
-                        new_follow |= follow[left]
-                    if not new_follow.issubset(follow[symbol]):
+                    if not follow_set.issubset(follow[symbol]):
+                        follow[symbol].update(follow_set)
                         change = True
-                        follow[symbol].update(new_follow)
+                    if "" in first(grammar, symbol):
+                        follow_set = follow_set.union(first(grammar, symbol) - {""})
+                    else:
+                        follow_set = first(grammar, symbol)
+                else:
+                    follow_set = {symbol}
     return follow
 
 
 def visualize_lr0_graph(states, transitions, output_filename="lr0_graph.gv"):
     dot = Digraph("LR0", filename=output_filename, format="pdf")
     dot.attr(rankdir="LR", size="15,10")  # aumenta el tamaño del gráfico
-    dot.attr(fontsize='14')  # aumenta el tamaño de la fuente
-    dot.attr(ranksep='1')  # aumenta el espacio entre los rangos de nodos
-    dot.attr(nodesep='1')  # aumenta el espacio entre los nodos en el mismo rango
+    dot.attr(fontsize="14")  # aumenta el tamaño de la fuente
+    dot.attr(ranksep="1")  # aumenta el espacio entre los rangos de nodos
+    dot.attr(nodesep="1")  # aumenta el espacio entre los nodos en el mismo rango
 
     # Agrega los estados al gráfico
     for i, state in enumerate(states):
@@ -296,4 +310,3 @@ if __name__ == "__main__":
     visualize_lr0(states, transitions)
 
     visualize_lr0_graph(states, transitions)
-
