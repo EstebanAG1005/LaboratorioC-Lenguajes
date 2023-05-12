@@ -71,6 +71,15 @@ def parse_yapar(file_path):
         if ignore_match:
             ignored.update(ignore_match.group(1).strip().split())
 
+    # Error checking
+    errors_found = False
+
+    # Check for undefined tokens in IGNORE
+    for token in ignored:
+        if token not in terminals:
+            print(f"Error: token no definido '{token}' usado en IGNORE")
+            errors_found = True
+
     terminals -= ignored
 
     rule_content_index = content.index("%%\n") + 1
@@ -79,36 +88,32 @@ def parse_yapar(file_path):
     non_terminals = set()
     rules = []
 
-    # Error checking
-    errors_found = False
-
     # Concatenar todas las líneas de una misma regla en una sola línea
     rule_lines = "".join([line.strip() for line in rule_lines]).split(";")
 
+    # Primero, recopilamos todas las no terminales
     for line in rule_lines:
         line = line.strip()
         if ":" in line:
             left, right = re.split(r"\s*:\s*", line.strip(), 1)
             non_terminals.add(left.strip())
+
+    # Después, una vez que tenemos todas las no terminales, verificamos las reglas
+    for line in rule_lines:
+        line = line.strip()
+        if ":" in line:
+            left, right = re.split(r"\s*:\s*", line.strip(), 1)
             productions = re.split(r"\s*\|\s*", right.strip())
             for production in productions:
                 rule = (left.strip(), production.split())
                 # check for undefined tokens and non-terminals
                 for symbol in rule[1]:
                     if symbol not in terminals and symbol not in non_terminals:
-                        print(
-                            f"Error: símbolo no definido '{symbol}' usado en la regla '{line}'"
-                        )
+                        print(f"Error: símbolo no definido '{symbol}' usado en la regla '{line}'")
                         errors_found = True
                 rules.append(rule)
         elif line != "":
             print(f"Error: regla sin producciones '{line}'")
-            errors_found = True
-
-    # Check for undefined tokens in IGNORE
-    for token in ignored:
-        if token not in terminals:
-            print(f"Error: token no definido '{token}' usado en IGNORE")
             errors_found = True
 
     if errors_found:
@@ -116,6 +121,7 @@ def parse_yapar(file_path):
         exit()
 
     return Grammar(terminals, non_terminals, rules)
+
 
 
 class LR0Item:
@@ -297,8 +303,8 @@ def visualize_lr0_graph(states, transitions, output_filename="lr0_graph.gv"):
 
 
 if __name__ == "__main__":
-    grammar = parse_yapar("LabE/slr-2.yalp")
-    yalex_rules = parse_yalex("LabE/slr-2.yal")
+    grammar = parse_yapar("LabE/slr-1.yalp")
+    yalex_rules = parse_yalex("LabE/slr-1.yal")
 
     # Validar tokens
     yalex_tokens = {rule.name for rule in yalex_rules}

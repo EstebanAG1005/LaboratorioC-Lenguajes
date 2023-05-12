@@ -4,99 +4,69 @@ digraph LR0 {
 	ranksep=1
 	nodesep=1
 	0 [label="State 0
-expression -> . expression MINUS term
 expression -> . expression PLUS term
 expression -> . term
 factor -> . ID
 factor -> . LPAREN expression RPAREN
-factor -> . NUMBER
 term -> . factor
-term -> . term DIV unknown_non_terminal
-term -> . term UNKNOWN_TOKEN factor" shape=rectangle]
+term -> . term TIMES factor" shape=rectangle]
 	1 [label="State 1
-factor -> NUMBER ." shape=rectangle]
-	2 [label="State 2
-expression -> expression . MINUS term
 expression -> expression . PLUS term" shape=rectangle]
+	2 [label="State 2
+factor -> ID ." shape=rectangle]
 	3 [label="State 3
-term -> factor ." shape=rectangle]
+expression -> term .
+term -> term . TIMES factor" shape=rectangle]
 	4 [label="State 4
-expression -> . expression MINUS term
 expression -> . expression PLUS term
 expression -> . term
 factor -> . ID
 factor -> . LPAREN expression RPAREN
 factor -> LPAREN . expression RPAREN
-factor -> . NUMBER
 term -> . factor
-term -> . term DIV unknown_non_terminal
-term -> . term UNKNOWN_TOKEN factor" shape=rectangle]
+term -> . term TIMES factor" shape=rectangle]
 	5 [label="State 5
-factor -> ID ." shape=rectangle]
+term -> factor ." shape=rectangle]
 	6 [label="State 6
-expression -> term .
-term -> term . DIV unknown_non_terminal
-term -> term . UNKNOWN_TOKEN factor" shape=rectangle]
-	7 [label="State 7
-term -> term DIV . unknown_non_terminal" shape=rectangle]
-	8 [label="State 8
-expression -> expression . MINUS term
 expression -> expression . PLUS term
 factor -> LPAREN expression . RPAREN" shape=rectangle]
-	9 [label="State 9
+	7 [label="State 7
 factor -> LPAREN expression RPAREN ." shape=rectangle]
-	10 [label="State 10
-expression -> expression MINUS . term
-factor -> . ID
-factor -> . LPAREN expression RPAREN
-factor -> . NUMBER
-term -> . factor
-term -> . term DIV unknown_non_terminal
-term -> . term UNKNOWN_TOKEN factor" shape=rectangle]
-	11 [label="State 11
+	8 [label="State 8
 expression -> expression PLUS . term
 factor -> . ID
 factor -> . LPAREN expression RPAREN
-factor -> . NUMBER
 term -> . factor
-term -> . term DIV unknown_non_terminal
-term -> . term UNKNOWN_TOKEN factor" shape=rectangle]
-	12 [label="State 12
+term -> . term TIMES factor" shape=rectangle]
+	9 [label="State 9
 expression -> expression PLUS term .
-term -> term . DIV unknown_non_terminal
-term -> term . UNKNOWN_TOKEN factor" shape=rectangle]
-	13 [label="State 13
-expression -> expression MINUS term .
-term -> term . DIV unknown_non_terminal
-term -> term . UNKNOWN_TOKEN factor" shape=rectangle]
-	0 -> 5 [label=ID]
+term -> term . TIMES factor" shape=rectangle]
+	10 [label="State 10
+factor -> . ID
+factor -> . LPAREN expression RPAREN
+term -> term TIMES . factor" shape=rectangle]
+	11 [label="State 11
+term -> term TIMES factor ." shape=rectangle]
+	0 -> 2 [label=ID]
 	0 -> 4 [label=LPAREN]
-	0 -> 1 [label=NUMBER]
-	0 -> 2 [label=expression]
-	0 -> 3 [label=factor]
-	0 -> 6 [label=term]
-	2 -> 10 [label=MINUS]
-	2 -> 11 [label=PLUS]
-	4 -> 5 [label=ID]
+	0 -> 1 [label=expression]
+	0 -> 5 [label=factor]
+	0 -> 3 [label=term]
+	1 -> 8 [label=PLUS]
+	3 -> 10 [label=TIMES]
+	4 -> 2 [label=ID]
 	4 -> 4 [label=LPAREN]
-	4 -> 1 [label=NUMBER]
-	4 -> 8 [label=expression]
-	4 -> 3 [label=factor]
-	4 -> 6 [label=term]
-	6 -> 7 [label=DIV]
-	8 -> 10 [label=MINUS]
-	8 -> 11 [label=PLUS]
-	8 -> 9 [label=RPAREN]
-	10 -> 5 [label=ID]
+	4 -> 6 [label=expression]
+	4 -> 5 [label=factor]
+	4 -> 3 [label=term]
+	6 -> 8 [label=PLUS]
+	6 -> 7 [label=RPAREN]
+	8 -> 2 [label=ID]
+	8 -> 4 [label=LPAREN]
+	8 -> 5 [label=factor]
+	8 -> 9 [label=term]
+	9 -> 10 [label=TIMES]
+	10 -> 2 [label=ID]
 	10 -> 4 [label=LPAREN]
-	10 -> 1 [label=NUMBER]
-	10 -> 3 [label=factor]
-	10 -> 13 [label=term]
-	11 -> 5 [label=ID]
-	11 -> 4 [label=LPAREN]
-	11 -> 1 [label=NUMBER]
-	11 -> 3 [label=factor]
-	11 -> 12 [label=term]
-	12 -> 7 [label=DIV]
-	13 -> 7 [label=DIV]
+	10 -> 11 [label=factor]
 }
