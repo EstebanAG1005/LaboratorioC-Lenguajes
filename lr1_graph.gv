@@ -11,6 +11,13 @@ factor -> . LPAREN expression RPAREN
 term -> . factor
 term -> . term TIMES factor" shape=rectangle]
 	1 [label="State 1
+factor -> ID ." shape=rectangle]
+	2 [label="State 2
+expression -> term .
+term -> term . TIMES factor" shape=rectangle]
+	3 [label="State 3
+expression -> expression . PLUS term" shape=rectangle]
+	4 [label="State 4
 expression -> . expression PLUS term
 expression -> . term
 factor -> . ID
@@ -18,21 +25,13 @@ factor -> . LPAREN expression RPAREN
 factor -> LPAREN . expression RPAREN
 term -> . factor
 term -> . term TIMES factor" shape=rectangle]
-	2 [label="State 2
-expression -> expression . PLUS term" shape=rectangle]
-	3 [label="State 3
-expression -> term .
-term -> term . TIMES factor" shape=rectangle]
-	4 [label="State 4
-factor -> ID ." shape=rectangle]
 	5 [label="State 5
 term -> factor ." shape=rectangle]
 	6 [label="State 6
-factor -> . ID
-factor -> . LPAREN expression RPAREN
-term -> term TIMES . factor" shape=rectangle]
+expression -> expression . PLUS term
+factor -> LPAREN expression . RPAREN" shape=rectangle]
 	7 [label="State 7
-term -> term TIMES factor ." shape=rectangle]
+factor -> LPAREN expression RPAREN ." shape=rectangle]
 	8 [label="State 8
 expression -> expression PLUS . term
 factor -> . ID
@@ -43,30 +42,31 @@ term -> . term TIMES factor" shape=rectangle]
 expression -> expression PLUS term .
 term -> term . TIMES factor" shape=rectangle]
 	10 [label="State 10
-expression -> expression . PLUS term
-factor -> LPAREN expression . RPAREN" shape=rectangle]
+factor -> . ID
+factor -> . LPAREN expression RPAREN
+term -> term TIMES . factor" shape=rectangle]
 	11 [label="State 11
-factor -> LPAREN expression RPAREN ." shape=rectangle]
-	0 -> 4 [label=ID]
-	0 -> 1 [label=LPAREN]
-	0 -> 2 [label=expression]
+term -> term TIMES factor ." shape=rectangle]
+	0 -> 1 [label=ID]
+	0 -> 4 [label=LPAREN]
+	0 -> 3 [label=expression]
 	0 -> 5 [label=factor]
-	0 -> 3 [label=term]
-	1 -> 4 [label=ID]
-	1 -> 1 [label=LPAREN]
-	1 -> 10 [label=expression]
-	1 -> 5 [label=factor]
-	1 -> 3 [label=term]
-	2 -> 8 [label=PLUS]
-	3 -> 6 [label=TIMES]
-	6 -> 4 [label=ID]
-	6 -> 1 [label=LPAREN]
-	6 -> 7 [label=factor]
-	8 -> 4 [label=ID]
-	8 -> 1 [label=LPAREN]
+	0 -> 2 [label=term]
+	2 -> 10 [label=TIMES]
+	3 -> 8 [label=PLUS]
+	4 -> 1 [label=ID]
+	4 -> 4 [label=LPAREN]
+	4 -> 6 [label=expression]
+	4 -> 5 [label=factor]
+	4 -> 2 [label=term]
+	6 -> 8 [label=PLUS]
+	6 -> 7 [label=RPAREN]
+	8 -> 1 [label=ID]
+	8 -> 4 [label=LPAREN]
 	8 -> 5 [label=factor]
 	8 -> 9 [label=term]
-	9 -> 6 [label=TIMES]
-	10 -> 8 [label=PLUS]
-	10 -> 11 [label=RPAREN]
+	9 -> 10 [label=TIMES]
+	10 -> 1 [label=ID]
+	10 -> 4 [label=LPAREN]
+	10 -> 11 [label=factor]
 }
