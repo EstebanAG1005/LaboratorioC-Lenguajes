@@ -310,103 +310,86 @@ def visualize_lr0_graph(states, transitions, output_filename="lr1_graph.gv"):
     dot.view()
 
 
-def build_slr_parsing_table(grammar, start_symbol, first_sets, follow_sets, states):
-    action_table = {}
-    goto_table = {}
+def build_slr_table(grammar, states, transitions):
+    action_table = defaultdict(dict)
+    goto_table = defaultdict(dict)
+    for state in states:
+        for item in state:
+            if item.lookahead == len(item.right):  # reducción
+                for terminal in first_star(
+                    grammar, item.right[item.lookahead :] + ["$"]
+                ):
+                    if terminal in action_table[state]:
+                        print(
+                            f"Conflicto encontrado en el estado {state} y el terminal {terminal}"
+                        )
+                        return None, None
+                    action_table[state][terminal] = (
+                        "reduce",
+                        grammar.rules.index((item.left, item.right)),
+                    )
+            elif item.right[item.lookahead] in grammar.terminals:  # shift
+                next_state = goto(grammar, state, item.right[item.lookahead])
 
-    for i, state in enumerate(states):
-        action_table[i] = {}
-        goto_table[i] = {}
+                print(type(item.right[item.lookahead]))
+                print(item.right[item.lookahead])
 
-        print("Debug states:", states)
-        for item in state.items:
-            # Para items del tipo [A -> alpha . a beta]
-            if item.position < len(item.right):
-                symbol = item.right[item.position]
+                action_table[state][(item.right[item.lookahead],)] = (
+                    "SHIFT",
+                    transitions[(state, item.right[item.lookahead])],
+                )
 
-                if symbol in grammar.symbols:  # Si el simbolo es un no terminal
-                    # Buscamos todos los estados al que podemos ir mediante `symbol` desde `state`
-                    for j, next_state in enumerate(states):
-                        if state.go_to(symbol) == next_state:
-                            goto_table[i][symbol] = j
+        for non_terminal in grammar.non_terminals:
+            next_state = goto(grammar, state, non_terminal)
+            if next_state in states:
+                goto_table[state][non_terminal] = states.index(next_state)
 
-                else:  # Si el simbolo es un terminal
-                    # Buscamos todos los estados al que podemos ir mediante `symbol` desde `state`
-                    for j, next_state in enumerate(states):
-                        if state.go_to(symbol) == next_state:
-                            action_table[i][symbol] = ("s", j)
-
-            # Para items del tipo [A -> alpha .] y A no es el simbolo de inicio
-            elif item.left != start_symbol:
-                for symbol in follow_sets[item.left]:
-                    try:
-                        # Si ya existe una acción para este símbolo, tenemos un conflicto
-                        if action_table[i][symbol]:
-                            print(f"SLR Conflict at state {i}, symbol {symbol}")
-                    except KeyError:
-                        for j, rule in enumerate(grammar.rules):
-                            if rule == (item.left, item.right):
-                                action_table[i][symbol] = ("r", j)
-
-        # Para el item [S' -> S .]
-        try:
-            action_table[i]["$"] = ("acc",)
-        except KeyError:
-            pass
+    # Agregar acción de aceptación
+    for item in states[0]:
+        if item.left == grammar.rules[0][0] and item.lookahead == len(item.right):
+            action_table[states[0]]["$"] = ("accept",)
 
     return action_table, goto_table
 
 
-def slr_parse(grammar, parsing_table, input_string):
-    action_table, goto_table = parsing_table
-
+def slr_parse(grammar, action_table, goto_table, input_string):
     stack = [0]
-    input_string = input_string + ["$"]
-
-    i = 0
+    cursor = 0
     while True:
-        top = stack[-1]
-        current_symbol = input_string[i]
-
-        if current_symbol not in action_table[top]:
-            return False, f"Unexpected symbol {current_symbol} at position {i}"
-
-        action = action_table[top][current_symbol]
-
-        if action == "accept":
-            return True, "The string is accepted."
-
+        state = stack[-1]
+        lookahead = input_string[cursor]
+        action = action_table[state].get(lookahead)
+        if action is None:
+            raise Exception(
+                f"Error sintáctico: acción no definida para el estado {state} y el lookahead {lookahead}"
+            )
         elif action[0] == "shift":
-            stack.append(current_symbol)
             stack.append(action[1])
-            i += 1
-
+            cursor += 1
         elif action[0] == "reduce":
-            left, right = grammar.rules[action[1]]
-            for _ in range(2 * len(right)):  # Elimina |right| elementos de la pila
-                stack.pop()
+            rule = grammar.rules[action[1]]
+            stack = stack[: -len(rule[1])]
             state = stack[-1]
-            stack.append(left)
-            if left in goto_table[state]:
-                stack.append(goto_table[state][left])
-            else:
-                return False, f"No transition for non-terminal {left} in state {state}"
-
+            stack.append(goto_table[state][rule[0]])
+        elif action[0] == "accept":
+            break
         else:
-            return False, f"Unexpected action {action}"
+            raise Exception(f"Error sintáctico: acción desconocida {action[0]}")
+    return stack
 
 
 if __name__ == "__main__":
+    # Parse YAPar and YALex files
     grammar = parse_yapar("LabE/slr-1.yalp")
     yalex_rules = parse_yalex("LabE/slr-1.yal")
 
-    # Validar tokens
+    # Validate tokens
     yalex_tokens = {rule.name for rule in yalex_rules}
     yapar_tokens = grammar.terminals
 
-    print("Tokens en YALex:")
+    print("Tokens in YALex:")
     print(yalex_tokens)
-    print("Tokens en YAPar:")
+    print("Tokens in YAPar:")
     print(yapar_tokens)
 
     if not yapar_tokens.issubset(yalex_tokens):
@@ -421,7 +404,7 @@ if __name__ == "__main__":
         print(f"Tokens faltantes en YALex: {missing_tokens}")
         exit()
 
-    # Aquí, después de procesar YALex, calcular los conjuntos Primero y Siguiente
+    # Compute First and Follow sets
     first_sets = {symbol: first(grammar, symbol) for symbol in grammar.non_terminals}
     follow_sets = compute_follow(grammar)
 
@@ -433,31 +416,23 @@ if __name__ == "__main__":
     for symbol, follow_set in follow_sets.items():
         print(f"  {symbol}: {follow_set}")
 
+    # Compute LR0 states and transitions
     states, transitions = lr0(grammar)
     visualize_lr0(states, transitions)
+    visualize_lr0_graph(states, transitions, "lr0_graph.gv")
 
-    visualize_lr0_graph(states, transitions)
+    # Build SLR table
+    action_table, goto_table = build_slr_table(grammar, states, transitions)
 
-    # Construir tabla de análisis SLR
-    action_table, goto_table = build_slr_parsing_table(
-        grammar, states, transitions, first_sets, follow_sets
-    )
+    if action_table is None or goto_table is None:
+        print("Error construyendo la tabla SLR.")
+        exit()
 
-    # Evaluar cadenas de entrada
-    input_strings = ["cadena1", "cadena2", "cadena3"]  # Lista de cadenas de entrada
-
-    for input_string in input_strings:
-        # Tokenizar la cadena de entrada
-        tokenized_input = tokenize(
-            input_string
-        )  # Función tokenize no proporcionada en el contexto
-
-        # Analizar la cadena de entrada
-        is_accepted, message = slr_parse(
-            grammar, (action_table, goto_table), tokenized_input
-        )
-
-        if is_accepted:
-            print(f"La cadena '{input_string}' es aceptada.")
-        else:
-            print(f"La cadena '{input_string}' es rechazada. Mensaje: {message}")
+    # Test with an input string
+    input_string = "a + b * (c + d)"
+    try:
+        parse_result = slr_parse(grammar, action_table, goto_table, input_string)
+        print(f"La cadena de entrada '{input_string}' fue aceptada.")
+        print("Parse result:", parse_result)
+    except Exception as e:
+        print(f"La cadena de entrada '{input_string}' no fue aceptada:", e)
