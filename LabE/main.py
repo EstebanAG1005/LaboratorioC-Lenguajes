@@ -376,6 +376,61 @@ def visualize_slr_table(grammar, table):
         print(row)
 
 
+def slr_parse(grammar, table, input):
+    stack = [0]
+    input.append("$")
+    cursor = 0
+
+    while True:
+        state = stack[-1]
+        symbol = input[cursor]
+
+        if symbol not in table[state][0]:
+            print(f"Error léxico: token inesperado '{symbol}' en la entrada.")
+            return
+
+        action = table[state][0][symbol]
+
+        if action[0] == "S":  # Shift
+            stack.append(action[1])
+            cursor += 1
+        elif action[0] == "R":  # Reduce
+            rule = grammar.rules[action[1]]
+            stack = stack[: -len(rule[1])]
+            stack.append(table[stack[-1]][1][rule[0]])
+        elif action[0] == "ACC":  # Accept
+            print("Entrada aceptada.")
+            return
+        else:
+            print(f"Error sintáctico: acción no reconocida '{action}' en la tabla.")
+            return
+
+
+def tokenize(file, rules):
+    with open(file, "r") as f:
+        content = f.read()
+
+    position = 0
+    tokens = []
+    while position < len(content):
+        match = None
+        for token_expr in rules:
+            pattern, tag = token_expr
+            regex = re.compile(pattern)
+            match = regex.match(content, position)
+            if match:
+                text = match.group(0)
+                if tag:
+                    token = (text, tag)
+                    tokens.append(token)
+                break
+        if not match:
+            raise Exception(f"Illegal character at {position}")
+        else:
+            position = match.end(0)
+    return tokens
+
+
 if __name__ == "__main__":
     # Parse YAPar and YALex files
     grammar = parse_yapar("LabE/slr-1.yalp")
@@ -423,3 +478,6 @@ if __name__ == "__main__":
 
     # Visualiza la tabla SLR
     visualize_slr_table(grammar, table)
+
+    tokens = [token for token, tag in tokenize("input.txt", rules)]
+    slr_parse(grammar, table, tokens)
