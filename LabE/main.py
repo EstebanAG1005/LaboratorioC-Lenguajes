@@ -1,5 +1,5 @@
 import re
-from collections import defaultdict
+from collections import defaultdict, deque
 from graphviz import Digraph
 
 
@@ -310,72 +310,70 @@ def visualize_lr0_graph(states, transitions, output_filename="lr1_graph.gv"):
     dot.view()
 
 
-def build_slr_table(grammar, states, transitions):
-    action_table = defaultdict(dict)
-    goto_table = defaultdict(dict)
-    for state in states:
+# Agrega esta función
+def slr_table(grammar, states, transitions):
+    table = []
+    for i, state in enumerate(states):
+        action = {}
+        goto = {}
         for item in state:
-            if item.lookahead == len(item.right):  # reducción
-                for terminal in first_star(
-                    grammar, item.right[item.lookahead :] + ["$"]
-                ):
-                    if terminal in action_table[state]:
-                        print(
-                            f"Conflicto encontrado en el estado {state} y el terminal {terminal}"
-                        )
-                        return None, None
-                    action_table[state][terminal] = (
-                        "reduce",
-                        grammar.rules.index((item.left, item.right)),
-                    )
-            elif item.right[item.lookahead] in grammar.terminals:  # shift
-                next_state = goto(grammar, state, item.right[item.lookahead])
-
-                print(type(item.right[item.lookahead]))
-                print(item.right[item.lookahead])
-
-                action_table[state][(item.right[item.lookahead],)] = (
-                    "SHIFT",
-                    transitions[(state, item.right[item.lookahead])],
-                )
-
-        for non_terminal in grammar.non_terminals:
-            next_state = goto(grammar, state, non_terminal)
-            if next_state in states:
-                goto_table[state][non_terminal] = states.index(next_state)
-
-    # Agregar acción de aceptación
-    for item in states[0]:
-        if item.left == grammar.rules[0][0] and item.lookahead == len(item.right):
-            action_table[states[0]]["$"] = ("accept",)
-
-    return action_table, goto_table
+            if item.lookahead < len(item.right):
+                symbol = item.right[item.lookahead]
+                if symbol in grammar.terminals:
+                    for t in transitions:
+                        if t[0] == state and t[1] == symbol:
+                            action[symbol] = ("S", states.index(t[2]))
+                elif symbol in grammar.non_terminals:
+                    for t in transitions:
+                        if t[0] == state and t[1] == symbol:
+                            goto[symbol] = states.index(t[2])
+            else:
+                if item.left == grammar.rules[0][0]:
+                    action["$"] = ("ACC",)
+                else:
+                    for rule in grammar.rules:
+                        if rule == (item.left, item.right):
+                            for symbol in follow_sets[item.left]:
+                                if symbol in action and action[symbol][0] != "R":
+                                    raise Exception(
+                                        f"Error: conflicto en estado {i}, acción {action[symbol]}"
+                                    )
+                                action[symbol] = ("R", grammar.rules.index(rule))
+        table.append((action, goto))
+    return table
 
 
-def slr_parse(grammar, action_table, goto_table, input_string):
-    stack = [0]
-    cursor = 0
-    while True:
-        state = stack[-1]
-        lookahead = input_string[cursor]
-        action = action_table[state].get(lookahead)
-        if action is None:
-            raise Exception(
-                f"Error sintáctico: acción no definida para el estado {state} y el lookahead {lookahead}"
-            )
-        elif action[0] == "shift":
-            stack.append(action[1])
-            cursor += 1
-        elif action[0] == "reduce":
-            rule = grammar.rules[action[1]]
-            stack = stack[: -len(rule[1])]
-            state = stack[-1]
-            stack.append(goto_table[state][rule[0]])
-        elif action[0] == "accept":
-            break
-        else:
-            raise Exception(f"Error sintáctico: acción desconocida {action[0]}")
-    return stack
+def visualize_slr_table(grammar, table):
+    symbols = list(grammar.terminals) + ["$"] + list(grammar.non_terminals)
+    col_widths = [
+        max(len(sym), 3) for sym in symbols
+    ]  # Calcule el ancho de cada columna
+
+    header = (
+        "| Estado | "
+        + " | ".join([f"{sym:>{col_widths[i]}}" for i, sym in enumerate(symbols)])
+        + " |"
+    )
+    print(header)
+    print("-" * len(header))
+
+    for i, (action, goto) in enumerate(table):
+        row = "|   " + str(i) + "   |"
+        for j, symbol in enumerate(list(grammar.terminals) + ["$"]):
+            if symbol in action:
+                act_str = action[symbol][0]
+                if len(action[symbol]) > 1:
+                    act_str += str(action[symbol][1])
+                row += f" {act_str:>{col_widths[j]}} |"
+            else:
+                row += " " * (col_widths[j] + 1) + "|"
+
+        for j, symbol in enumerate(list(grammar.non_terminals)):
+            if symbol in goto:
+                row += f" {goto[symbol]:>{col_widths[j+len(grammar.terminals)+1]}} |"
+            else:
+                row += " " * (col_widths[j + len(grammar.terminals) + 1] + 1) + "|"
+        print(row)
 
 
 if __name__ == "__main__":
@@ -421,18 +419,7 @@ if __name__ == "__main__":
     visualize_lr0(states, transitions)
     visualize_lr0_graph(states, transitions, "lr0_graph.gv")
 
-    # Build SLR table
-    action_table, goto_table = build_slr_table(grammar, states, transitions)
+    table = slr_table(grammar, states, transitions)
 
-    if action_table is None or goto_table is None:
-        print("Error construyendo la tabla SLR.")
-        exit()
-
-    # Test with an input string
-    input_string = "a + b * (c + d)"
-    try:
-        parse_result = slr_parse(grammar, action_table, goto_table, input_string)
-        print(f"La cadena de entrada '{input_string}' fue aceptada.")
-        print("Parse result:", parse_result)
-    except Exception as e:
-        print(f"La cadena de entrada '{input_string}' no fue aceptada:", e)
+    # Visualiza la tabla SLR
+    visualize_slr_table(grammar, table)
