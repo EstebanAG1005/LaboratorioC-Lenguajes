@@ -1,1 +1,1 @@
-a * (b + c)
+ID PLUS ID TIMES ID

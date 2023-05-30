@@ -23,12 +23,13 @@ def parse_yalex(file_path):
                 continue
 
             if inside_tokens_rule:
-                if ("|" in line or "ws" in line) and "return" in line:
-                    # Se extrae el nombre del token que está después de 'return'
-                    token_name = line.split("return")[1].split("}")[0].strip()
+                if "|" in line and "return" in line:
+                    # Extract the token name after 'return' and remove unnecessary characters
+                    token_name = line.split("return")[1].strip().replace("}", "").replace("{", "").strip()
                     lexer_rules.append(LexerRule(token_name, "", None))
 
     return lexer_rules
+
 
 
 class Grammar:
@@ -280,7 +281,6 @@ def visualize_lr0_graph(states, transitions, output_filename="lr1_graph.gv"):
 
     dot.view()
 
-
 def slr_table(grammar, states, transitions):
     table = []
     for i, state in enumerate(states):
@@ -301,47 +301,46 @@ def slr_table(grammar, states, transitions):
                 if item.left == grammar.rules[0][0]:
                     action["$"] = ("ACC",)
                 else:
-                    for rule in grammar.rules:
-                        if rule == (item.left, item.right):
+                    for idx, rule in enumerate(grammar.rules):
+                        if rule[0] == item.left and tuple(rule[1]) == item.right:
                             for symbol in follow_sets[item.left]:
                                 if symbol in action and action[symbol][0] != "R":
                                     raise Exception(
                                         f"Error: conflicto en estado {i}, acción {action[symbol]}"
                                     )
-                                action[symbol] = ("R", grammar.rules.index(rule))
+                                if symbol != "":
+                                    action[symbol] = ("R", idx)
         table.append((action, goto))
     return table
+
+
 
 
 def visualize_slr_table(grammar, table):
     symbols = list(grammar.terminals) + ["$"] + list(grammar.non_terminals)
     col_widths = [max(len(sym), 3) for sym in symbols]
 
-    header = (
-        "| Estado | "
-        + " | ".join([f"{sym:>{col_widths[i]}}" for i, sym in enumerate(symbols)])
-        + " |"
-    )
+    header = f"| {'State':^10} |" + " | ".join([f"{sym:^{col_widths[i]}}" for i, sym in enumerate(symbols)]) + " |"
     print(header)
     print("-" * len(header))
 
     for i, (action, goto) in enumerate(table):
-        row = "|   " + str(i) + "   |"
-        for j, symbol in enumerate(list(grammar.terminals) + ["$"]):
-            if symbol in action:
+        row = f"| {str(i):^10} |"
+
+        for j, symbol in enumerate(symbols):
+            if j < len(grammar.terminals) + 1 and symbol in action:
                 act_str = action[symbol][0]
                 if len(action[symbol]) > 1:
                     act_str += str(action[symbol][1])
-                row += f" {act_str:>{col_widths[j]}} |"
-            else:
-                row += " " * (col_widths[j] + 1) + "|"
+                row += f" {act_str:^{col_widths[j]}} |"
 
-        for j, symbol in enumerate(list(grammar.non_terminals)):
-            if symbol in goto:
-                row += f" {goto[symbol]:>{col_widths[j+len(grammar.terminals)+1]}} |"
+            elif j >= len(grammar.terminals) + 1 and symbol in goto:
+                row += f" {goto[symbol]:^{col_widths[j]}} |"
+            
             else:
-                row += " " * (col_widths[j + len(grammar.terminals) + 1] + 1) + "|"
+                row += " " * (col_widths[j] + 2) + "|"
         print(row)
+
 
 
 def slr_parse(grammar, table, tokens):
@@ -351,7 +350,7 @@ def slr_parse(grammar, table, tokens):
 
     while stack:
         state = stack[-1]
-        symbol = tokens[cursor][0]
+        symbol = tokens[cursor]
 
         if symbol not in table[state][0]:
             print(f"Error léxico: token inesperado '{symbol}' en la entrada.")
@@ -367,6 +366,7 @@ def slr_parse(grammar, table, tokens):
             for _ in range(len(rule[1])):
                 stack.pop()
             stack.append(table[stack[-1]][1][rule[0]])
+            print(f"Reduce: {rule[0]} -> {' '.join(rule[1])}")
         elif action[0] == "ACC":
             print("Entrada aceptada.")
             return
@@ -378,7 +378,12 @@ def slr_parse(grammar, table, tokens):
             print(f"Error sintáctico: final inesperado de la entrada.")
             return
 
+        print(table[state][0][symbol])
+
     print("Análisis sintáctico completado.")
+
+
+
 
 
 def tokenize(file, rules):
@@ -396,6 +401,9 @@ def tokenize(file, rules):
             match = regex.match(content, position)
             if match:
                 text = match.group(0)
+                if tag == "PLUS" and text == "+":
+                    # Treat "PLUS" as an identifier token
+                    tag = "ID"
                 if tag:
                     token = (text, tag)
                     tokens.append(token)
@@ -410,6 +418,7 @@ def tokenize(file, rules):
         print(token)
 
     return tokens
+
 
 
 if __name__ == "__main__":

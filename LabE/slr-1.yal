@@ -6,8 +6,8 @@ let ID = letter(letter|digit)*
 
 rule tokens = 
     ws       { return WS }
-  | ID        { return ID }
-  | '+'       { return PLUS }
-  | '*'       { return TIMES }
-  | '('       { return LPAREN }
-  | ')'       { return RPAREN }
+  | "+"      { return PLUS }
+  | "*"      { return TIMES }
+  | "("      { return LPAREN }
+  | ")"      { return RPAREN }
+  | ID       { return ID }
