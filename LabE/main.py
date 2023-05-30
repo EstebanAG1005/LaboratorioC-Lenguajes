@@ -343,24 +343,36 @@ def visualize_slr_table(grammar, table):
 
 
 
-def slr_parse(grammar, table, tokens):
+def slr_parse(grammar, table, input_string):
     stack = [0]
-    cursor = 0
+    position = 0
+    tokens = input_string.split()  # Divide la cadena de entrada en tokens
     token_count = len(tokens)
 
     while stack:
         state = stack[-1]
-        symbol = tokens[cursor]
 
-        if symbol not in table[state][0]:
-            print(f"Error léxico: token inesperado '{symbol}' en la entrada.")
+        # Obtener el símbolo actual de entrada como un bloque (token)
+        if position < token_count:
+            token = tokens[position]
+        else:
+            token = ""
+
+        print(table[state][0])
+
+        if token not in table[state][0]:
+            print(f"Error léxico: token inesperado '{token}' en la entrada.")
             return
 
-        action = table[state][0][symbol]
+        action = table[state][0].get(token)
+
+        if action is None:
+            print(f"Error sintáctico: no se encontró una acción para el token '{token}' en el estado {state}.")
+            return
 
         if action[0] == "S":
             stack.append(action[1])
-            cursor += 1
+            position += 1
         elif action[0] == "R":
             rule = grammar.rules[action[1]]
             for _ in range(len(rule[1])):
@@ -374,14 +386,11 @@ def slr_parse(grammar, table, tokens):
             print(f"Error sintáctico: acción no reconocida '{action}' en la tabla.")
             return
 
-        if cursor >= token_count:
+        if position > token_count:
             print(f"Error sintáctico: final inesperado de la entrada.")
             return
 
-        print(table[state][0][symbol])
-
     print("Análisis sintáctico completado.")
-
 
 
 
@@ -418,7 +427,6 @@ def tokenize(file, rules):
         print(token)
 
     return tokens
-
 
 
 if __name__ == "__main__":
@@ -466,4 +474,4 @@ if __name__ == "__main__":
     visualize_slr_table(grammar, table)
 
     print(tokens)
-    slr_parse(grammar, table, tokens)  # Mover esta línea aquí
+    slr_parse(grammar, table, ' '.join(tokens))  # Unir los tokens en una cadena de texto para evaluarla como una entrada completa
