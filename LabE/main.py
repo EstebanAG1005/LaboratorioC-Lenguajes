@@ -349,7 +349,7 @@ def slr_parse(grammar, table, tokens):
     cursor = 0
     token_count = len(tokens)
 
-    while True:
+    while stack:
         state = stack[-1]
         symbol = tokens[cursor][0]
 
@@ -378,6 +378,8 @@ def slr_parse(grammar, table, tokens):
             print(f"Error sintáctico: final inesperado de la entrada.")
             return
 
+    print("Análisis sintáctico completado.")
+
 
 def tokenize(file, rules):
     with open(file, "r") as f:
@@ -403,12 +405,18 @@ def tokenize(file, rules):
         else:
             position = match.end()
 
+    print("Tokens generados:")
+    for token in tokens:
+        print(token)
+
     return tokens
 
 
 if __name__ == "__main__":
     grammar = parse_yapar("LabE/slr-1.yalp")
     yalex_rules = parse_yalex("LabE/slr-1.yal")
+    with open("LabE/entry.txt", "r") as f:
+        tokens = f.read().split()
 
     yalex_tokens = {rule.name for rule in yalex_rules}
     yapar_tokens = grammar.terminals
@@ -448,5 +456,5 @@ if __name__ == "__main__":
     table = slr_table(grammar, states, transitions)
     visualize_slr_table(grammar, table)
 
-    tokens = tokenize("LabE/entry.txt", yalex_rules)
-    slr_parse(grammar, table, tokens)
+    print(tokens)
+    slr_parse(grammar, table, tokens)  # Mover esta línea aquí

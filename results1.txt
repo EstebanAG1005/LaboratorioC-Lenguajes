@@ -1,0 +1,25 @@
+if pertenece a la regla if
+for pertenece a la regla no pertenece a la gramatica
+0 pertenece a la regla digito
+1 pertenece a la regla digito
+2 pertenece a la regla digito
+3 pertenece a la regla digito
+4 pertenece a la regla digito
+5 pertenece a la regla digito
+6 pertenece a la regla digito
+7 pertenece a la regla digito
+8 pertenece a la regla digito
+9 pertenece a la regla digito
+0.5 pertenece a la regla no pertenece a la gramatica
+3.1415 pertenece a la regla no pertenece a la gramatica
+8. pertenece a la regla no pertenece a la gramatica
+123 pertenece a la regla numero
+A pertenece a la regla letra
+B pertenece a la regla letra
+C pertenece a la regla letra
+D pertenece a la regla letra
+E pertenece a la regla letra
+F pertenece a la regla letra
+G pertenece a la regla letra
+ABC123xyz pertenece a la regla no pertenece a la gramatica
+123 456 ABC pertenece a la regla no pertenece a la gramatica

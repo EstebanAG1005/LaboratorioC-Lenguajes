@@ -704,27 +704,25 @@ def read_rule_tokens(file_path):
 
 
 # Read the rule tokens from the file
-rule_tokens = read_rule_tokens("yalex3.lex")
+rule_tokens = read_rule_tokens("LabD\yalex1.lex")
 
 automatas = []
 # Leemos el archivo .yal y extraemos las reglas
-all_rules = convertir_lex("yalex3.lex")
+all_rules = convertir_lex("LabD\yalex1.lex")
 
 # Apply read_yalex_file
 updated_rules = read_yalex_file("yalex_actualizado.lex")
 print(updated_rules)
 
 # Extract the desired rule names from the original YALex file based on the rule tokens
-desired_rule_names = extract_rule_names_from_yalex("yalex3.lex", rule_tokens)
+desired_rule_names = extract_rule_names_from_yalex("LabD\yalex1.lex", rule_tokens)
 
 # Get the desired rules based on their names
 desired_rules = get_desired_rules(desired_rule_names, updated_rules)
 
 # text = "if 0 1 2 3 4 5 6 7 8 9 0x1A 0xFF 0.5 3.1415 8. 123 A B C D E F G ABC123"
 
-text = (
-    'if for 0 1 2 3 4 5 6 7 8 9 0.5 3.1415 8. 123 A B C D E F G ABC123xyz "123 456 ABC"'
-)
+text = "a + (b * c)"
 
 # Crear el mega autómata con las reglas deseadas
 mega_automaton, accept_states_info = create_mega_automaton(desired_rules)
@@ -733,6 +731,18 @@ mega_automaton, accept_states_info = create_mega_automaton(desired_rules)
 # Procesar la cadena de texto utilizando el mega autómata
 results = process_text_with_afn(text, mega_automaton, accept_states_info)
 
-# Imprimir los resultados
-for rule, matched_text in results:
-    print(f"{matched_text} pertenece a la regla {rule}")
+# Open the file
+with open("results.txt", "w") as f:
+    # Imprimir los resultados
+    for rule, matched_text in results:
+        # Check the rule before printing and writing
+        if rule != "no pertenece a la gramatica":
+            result_string = f"{matched_text} pertenece a la regla {rule}"
+
+            # Print the result
+            print(result_string)
+
+            # Write the result to the file
+            f.write(
+                result_string + "\n"
+            )  # '\n' is a newline character, which makes each result start on a new line

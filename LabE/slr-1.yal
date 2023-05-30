@@ -1,7 +1,3 @@
-(* Lexer para Gramática No. 1 - Expresiones aritméticas simples para variables *)
-
-(* Introducir cualquier header aqui *)
-
 let delim = [" ""\t""\n"]
 let ws = delim+
 let letter = ["A"-"Z""a"-"z"]
@@ -15,5 +11,3 @@ rule tokens =
   | '*'       { return TIMES }
   | '('       { return LPAREN }
   | ')'       { return RPAREN }
-
-(* Introducir cualquier trailer aqui *)
