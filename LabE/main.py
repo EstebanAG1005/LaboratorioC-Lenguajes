@@ -26,7 +26,7 @@ def parse_yalex(file_path):
                 if ("|" in line or "ws" in line) and "return" in line:
                     # Se extrae el nombre del token que está después de 'return'
                     token_name = line.split("return")[1].split("}")[0].strip()
-                    lexer_rules.append(LexerRule(token_name, None, None))
+                    lexer_rules.append(LexerRule(token_name, "", None))
 
     return lexer_rules
 
@@ -36,9 +36,8 @@ class Grammar:
         self.terminals = terminals
         self.non_terminals = non_terminals
         self.rules = rules
-        self.nullables = self.compute_nullables()  # Agrega esta línea
+        self.nullables = self.compute_nullables()
 
-    # Agrega este método a la clase `Grammar`
     def compute_nullables(self):
         nullables = set()
         change = True
@@ -49,9 +48,6 @@ class Grammar:
                     nullables.add(left)
                     change = True
         return nullables
-
-
-import re
 
 
 def parse_yapar(file_path):
@@ -74,15 +70,6 @@ def parse_yapar(file_path):
         if ignore_match:
             ignored.update(ignore_match.group(1).strip().split())
 
-    # Error checking
-    errors_found = False
-
-    # Check for undefined tokens in IGNORE
-    for token in ignored:
-        if token not in terminals:
-            print(f"Error: token no definido '{token}' usado en IGNORE")
-            errors_found = True
-
     terminals -= ignored
 
     rule_content_index = content.index("%%\n") + 1
@@ -91,17 +78,14 @@ def parse_yapar(file_path):
     non_terminals = set()
     rules = []
 
-    # Concatenar todas las líneas de una misma regla en una sola línea
     rule_lines = "".join([line.strip() for line in rule_lines]).split(";")
 
-    # Primero, recopilamos todas las no terminales
     for line in rule_lines:
         line = line.strip()
         if ":" in line:
             left, right = re.split(r"\s*:\s*", line.strip(), 1)
             non_terminals.add(left.strip())
 
-    # Después, una vez que tenemos todas las no terminales, verificamos las reglas
     for line in rule_lines:
         line = line.strip()
         if ":" in line:
@@ -113,21 +97,14 @@ def parse_yapar(file_path):
             else:
                 for production in productions:
                     rule = (left.strip(), production.split())
-                    # check for undefined tokens and non-terminals
                     for symbol in rule[1]:
                         if symbol not in terminals and symbol not in non_terminals:
                             print(
                                 f"Error: símbolo no definido '{symbol}' usado en la regla '{line}'"
                             )
-                            errors_found = True
                     rules.append(rule)
         elif line != "":
             print(f"Error: regla sin producciones '{line}'")
-            errors_found = True
-
-    if errors_found:
-        print("Se encontraron errores en el archivo YAPar. Deteniendo la ejecución.")
-        exit()
 
     return Grammar(terminals, non_terminals, rules)
 
@@ -135,7 +112,7 @@ def parse_yapar(file_path):
 class LR0Item:
     def __init__(self, left, right, lookahead):
         self.left = left
-        self.right = tuple(right)  # Convertir la lista 'right' en una tupla
+        self.right = tuple(right)
         self.lookahead = lookahead
 
     def __repr__(self):
@@ -166,7 +143,6 @@ def closure(grammar, items):
                 for rule in grammar.rules
                 if rule[0] == item.right[item.lookahead]
             ]
-            # Comprobar si los nuevos elementos ya están en 'closure_set'
             new_items = [item for item in new_items if item not in closure_set]
 
             if new_items:
@@ -229,12 +205,10 @@ def first(grammar, symbol, seen=None):
 
     first_set = set()
 
-    # Si el símbolo es terminal, agregarlo al conjunto FIRST y retornarlo
     if symbol in grammar.terminals:
         first_set.add(symbol)
         return first_set
 
-    # Si el símbolo es no terminal, calcular FIRST para cada regla que comienza con ese símbolo
     for rule in grammar.rules:
         if rule[0] == symbol:
             for s in rule[1]:
@@ -284,12 +258,11 @@ def compute_follow(grammar):
 
 def visualize_lr0_graph(states, transitions, output_filename="lr1_graph.gv"):
     dot = Digraph("LR0", filename=output_filename, format="pdf")
-    dot.attr(rankdir="LR", size="15,10")  # aumenta el tamaño del gráfico
-    dot.attr(fontsize="14")  # aumenta el tamaño de la fuente
-    dot.attr(ranksep="1")  # aumenta el espacio entre los rangos de nodos
-    dot.attr(nodesep="1")  # aumenta el espacio entre los nodos en el mismo rango
+    dot.attr(rankdir="LR", size="15,10")
+    dot.attr(fontsize="14")
+    dot.attr(ranksep="1")
+    dot.attr(nodesep="1")
 
-    # Agrega los estados al gráfico
     for i, state in enumerate(states):
         state_label = f"State {i}\n"
         state_label += "\n".join(
@@ -300,17 +273,14 @@ def visualize_lr0_graph(states, transitions, output_filename="lr1_graph.gv"):
         )
         dot.node(str(i), label=state_label, shape="rectangle")
 
-    # Agrega las transiciones al gráfico
     for t in sorted(
         transitions, key=lambda x: (states.index(x[0]), x[1], states.index(x[2]))
     ):
         dot.edge(str(states.index(t[0])), str(states.index(t[2])), label=t[1])
 
-    # Genera y guarda el gráfico
     dot.view()
 
 
-# Agrega esta función
 def slr_table(grammar, states, transitions):
     table = []
     for i, state in enumerate(states):
@@ -345,9 +315,7 @@ def slr_table(grammar, states, transitions):
 
 def visualize_slr_table(grammar, table):
     symbols = list(grammar.terminals) + ["$"] + list(grammar.non_terminals)
-    col_widths = [
-        max(len(sym), 3) for sym in symbols
-    ]  # Calcule el ancho de cada columna
+    col_widths = [max(len(sym), 3) for sym in symbols]
 
     header = (
         "| Estado | "
@@ -376,14 +344,14 @@ def visualize_slr_table(grammar, table):
         print(row)
 
 
-def slr_parse(grammar, table, input):
+def slr_parse(grammar, table, tokens):
     stack = [0]
-    input.append("$")
     cursor = 0
+    token_count = len(tokens)
 
     while True:
         state = stack[-1]
-        symbol = input[cursor]
+        symbol = tokens[cursor][0]
 
         if symbol not in table[state][0]:
             print(f"Error léxico: token inesperado '{symbol}' en la entrada.")
@@ -391,18 +359,23 @@ def slr_parse(grammar, table, input):
 
         action = table[state][0][symbol]
 
-        if action[0] == "S":  # Shift
+        if action[0] == "S":
             stack.append(action[1])
             cursor += 1
-        elif action[0] == "R":  # Reduce
+        elif action[0] == "R":
             rule = grammar.rules[action[1]]
-            stack = stack[: -len(rule[1])]
+            for _ in range(len(rule[1])):
+                stack.pop()
             stack.append(table[stack[-1]][1][rule[0]])
-        elif action[0] == "ACC":  # Accept
+        elif action[0] == "ACC":
             print("Entrada aceptada.")
             return
         else:
             print(f"Error sintáctico: acción no reconocida '{action}' en la tabla.")
+            return
+
+        if cursor >= token_count:
+            print(f"Error sintáctico: final inesperado de la entrada.")
             return
 
 
@@ -415,7 +388,8 @@ def tokenize(file, rules):
     while position < len(content):
         match = None
         for token_expr in rules:
-            pattern, tag = token_expr
+            pattern = token_expr.pattern
+            tag = token_expr.name
             regex = re.compile(pattern)
             match = regex.match(content, position)
             if match:
@@ -427,16 +401,15 @@ def tokenize(file, rules):
         if not match:
             raise Exception(f"Illegal character at {position}")
         else:
-            position = match.end(0)
+            position = match.end()
+
     return tokens
 
 
 if __name__ == "__main__":
-    # Parse YAPar and YALex files
     grammar = parse_yapar("LabE/slr-1.yalp")
     yalex_rules = parse_yalex("LabE/slr-1.yal")
 
-    # Validate tokens
     yalex_tokens = {rule.name for rule in yalex_rules}
     yapar_tokens = grammar.terminals
 
@@ -457,7 +430,6 @@ if __name__ == "__main__":
         print(f"Tokens faltantes en YALex: {missing_tokens}")
         exit()
 
-    # Compute First and Follow sets
     first_sets = {symbol: first(grammar, symbol) for symbol in grammar.non_terminals}
     follow_sets = compute_follow(grammar)
 
@@ -469,15 +441,12 @@ if __name__ == "__main__":
     for symbol, follow_set in follow_sets.items():
         print(f"  {symbol}: {follow_set}")
 
-    # Compute LR0 states and transitions
     states, transitions = lr0(grammar)
     visualize_lr0(states, transitions)
     visualize_lr0_graph(states, transitions, "lr0_graph.gv")
 
     table = slr_table(grammar, states, transitions)
-
-    # Visualiza la tabla SLR
     visualize_slr_table(grammar, table)
 
-    tokens = [token for token, tag in tokenize("input.txt", rules)]
+    tokens = tokenize("LabE/entry.txt", yalex_rules)
     slr_parse(grammar, table, tokens)
