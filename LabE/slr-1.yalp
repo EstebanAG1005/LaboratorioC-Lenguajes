@@ -17,10 +17,16 @@ expression:
     expression PLUS term
   | term
 ;
+
 term:
-    term TIMES factor
-  | factor
+    term factor_prime
 ;
+
+factor_prime:
+    TIMES factor
+  | /* empty */
+;
+
 factor:
     LPAREN expression RPAREN
   | ID

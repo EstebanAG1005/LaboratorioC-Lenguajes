@@ -6,67 +6,55 @@ digraph LR0 {
 	0 [label="State 0
 expression -> . expression PLUS term
 expression -> . term
+term -> . term factor_prime" shape=rectangle]
+	1 [label="State 1
+expression -> term .
+factor_prime -> . /* empty */
+factor_prime -> . TIMES factor
+term -> term . factor_prime" shape=rectangle]
+	2 [label="State 2
+expression -> expression . PLUS term" shape=rectangle]
+	3 [label="State 3
+expression -> expression PLUS . term
+term -> . term factor_prime" shape=rectangle]
+	4 [label="State 4
+expression -> expression PLUS term .
+factor_prime -> . /* empty */
+factor_prime -> . TIMES factor
+term -> term . factor_prime" shape=rectangle]
+	5 [label="State 5
+term -> term factor_prime ." shape=rectangle]
+	6 [label="State 6
 factor -> . ID
 factor -> . LPAREN expression RPAREN
-term -> . factor
-term -> . term TIMES factor" shape=rectangle]
-	1 [label="State 1
-term -> factor ." shape=rectangle]
-	2 [label="State 2
-factor -> ID ." shape=rectangle]
-	3 [label="State 3
+factor_prime -> TIMES . factor" shape=rectangle]
+	7 [label="State 7
 expression -> . expression PLUS term
 expression -> . term
-factor -> . ID
-factor -> . LPAREN expression RPAREN
 factor -> LPAREN . expression RPAREN
-term -> . factor
-term -> . term TIMES factor" shape=rectangle]
-	4 [label="State 4
-expression -> term .
-term -> term . TIMES factor" shape=rectangle]
-	5 [label="State 5
-expression -> expression . PLUS term" shape=rectangle]
-	6 [label="State 6
-expression -> expression PLUS . term
-factor -> . ID
-factor -> . LPAREN expression RPAREN
-term -> . factor
-term -> . term TIMES factor" shape=rectangle]
-	7 [label="State 7
-expression -> expression PLUS term .
-term -> term . TIMES factor" shape=rectangle]
+term -> . term factor_prime" shape=rectangle]
 	8 [label="State 8
-factor -> . ID
-factor -> . LPAREN expression RPAREN
-term -> term TIMES . factor" shape=rectangle]
+factor -> ID ." shape=rectangle]
 	9 [label="State 9
-term -> term TIMES factor ." shape=rectangle]
+factor_prime -> TIMES factor ." shape=rectangle]
 	10 [label="State 10
 expression -> expression . PLUS term
 factor -> LPAREN expression . RPAREN" shape=rectangle]
 	11 [label="State 11
 factor -> LPAREN expression RPAREN ." shape=rectangle]
-	0 -> 2 [label=ID]
-	0 -> 3 [label=LPAREN]
-	0 -> 5 [label=expression]
-	0 -> 1 [label=factor]
-	0 -> 4 [label=term]
-	3 -> 2 [label=ID]
-	3 -> 3 [label=LPAREN]
-	3 -> 10 [label=expression]
-	3 -> 1 [label=factor]
+	0 -> 2 [label=expression]
+	0 -> 1 [label=term]
+	1 -> 6 [label=TIMES]
+	1 -> 5 [label=factor_prime]
+	2 -> 3 [label=PLUS]
 	3 -> 4 [label=term]
-	4 -> 8 [label=TIMES]
-	5 -> 6 [label=PLUS]
-	6 -> 2 [label=ID]
-	6 -> 3 [label=LPAREN]
-	6 -> 1 [label=factor]
-	6 -> 7 [label=term]
-	7 -> 8 [label=TIMES]
-	8 -> 2 [label=ID]
-	8 -> 3 [label=LPAREN]
-	8 -> 9 [label=factor]
-	10 -> 6 [label=PLUS]
+	4 -> 6 [label=TIMES]
+	4 -> 5 [label=factor_prime]
+	6 -> 8 [label=ID]
+	6 -> 7 [label=LPAREN]
+	6 -> 9 [label=factor]
+	7 -> 10 [label=expression]
+	7 -> 1 [label=term]
+	10 -> 3 [label=PLUS]
 	10 -> 11 [label=RPAREN]
 }
